@@ -1,16 +1,27 @@
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Users Table
+-- Users Table (Supports both email/password and Google OAuth authentication)
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
+    password_hash VARCHAR(255),  -- Nullable: OAuth users won't have passwords
     role VARCHAR(50) NOT NULL CHECK (role IN ('parent', 'nanny', 'admin')),
     is_verified BOOLEAN DEFAULT FALSE,
+    oauth_provider VARCHAR(50),  -- 'google' for OAuth users, NULL for email/password
+    oauth_provider_id VARCHAR(255),  -- Unique ID from Google
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT unique_oauth_provider_id UNIQUE (oauth_provider, oauth_provider_id),
+    CONSTRAINT user_auth_method_check CHECK (
+        (password_hash IS NOT NULL AND oauth_provider IS NULL) OR
+        (password_hash IS NULL AND oauth_provider IS NOT NULL) OR
+        (password_hash IS NOT NULL AND oauth_provider IS NOT NULL)
+    )
 );
+
+-- Index for faster OAuth lookups
+CREATE INDEX idx_users_oauth_provider ON users(oauth_provider, oauth_provider_id);
 
 -- Profiles Table
 CREATE TABLE profiles (
