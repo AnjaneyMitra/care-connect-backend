@@ -45,7 +45,7 @@ Skills, experience, hourly rate
 
 Verification status
 
-Upload profile image (Cloudinary/S3)
+Upload profile image (Cloudinary/S3) - skip for now
 
 Availability schedule
 
