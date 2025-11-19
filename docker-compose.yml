@@ -4,7 +4,7 @@ services:
     image: postgres:15
     env_file: ./db.env        # loads credentials below
     ports:
-      - "5432:5432"          # careful: exposes to host
+      - "5433:5432"          # careful: exposes to host
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:

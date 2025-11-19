@@ -1,0 +1,150 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model applications {
+  id         String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  job_id     String?   @db.Uuid
+  nanny_id   String?   @db.Uuid
+  status     String?   @default("applied") @db.VarChar(50)
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at DateTime? @default(now()) @db.Timestamptz(6)
+  jobs       jobs?     @relation(fields: [job_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users      users?    @relation(fields: [nanny_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([job_id, nanny_id])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model bookings {
+  id                              String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  job_id                          String?    @db.Uuid
+  parent_id                       String?    @db.Uuid
+  nanny_id                        String?    @db.Uuid
+  status                          String?    @default("requested") @db.VarChar(50)
+  start_time                      DateTime?  @db.Timestamptz(6)
+  end_time                        DateTime?  @db.Timestamptz(6)
+  created_at                      DateTime?  @default(now()) @db.Timestamptz(6)
+  updated_at                      DateTime?  @default(now()) @db.Timestamptz(6)
+  jobs                            jobs?      @relation(fields: [job_id], references: [id], onUpdate: NoAction)
+  users_bookings_nanny_idTousers  users?     @relation("bookings_nanny_idTousers", fields: [nanny_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_bookings_parent_idTousers users?     @relation("bookings_parent_idTousers", fields: [parent_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  chats                           chats[]
+  payments                        payments[]
+  reviews                         reviews[]
+}
+
+model chats {
+  id         String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  booking_id String?    @db.Uuid
+  created_at DateTime?  @default(now()) @db.Timestamptz(6)
+  bookings   bookings?  @relation(fields: [booking_id], references: [id], onUpdate: NoAction)
+  messages   messages[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model jobs {
+  id           String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  parent_id    String?        @db.Uuid
+  title        String         @db.VarChar(255)
+  description  String?
+  date         DateTime       @db.Date
+  time         DateTime       @db.Time(6)
+  location_lat Decimal?       @db.Decimal(10, 8)
+  location_lng Decimal?       @db.Decimal(11, 8)
+  status       String?        @default("open") @db.VarChar(50)
+  created_at   DateTime?      @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime?      @default(now()) @db.Timestamptz(6)
+  applications applications[]
+  bookings     bookings[]
+  users        users?         @relation(fields: [parent_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model messages {
+  id             String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  chat_id        String?   @db.Uuid
+  sender_id      String?   @db.Uuid
+  content        String
+  read_status    Boolean?  @default(false)
+  attachment_url String?
+  created_at     DateTime? @default(now()) @db.Timestamptz(6)
+  chats          chats?    @relation(fields: [chat_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users          users?    @relation(fields: [sender_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model nanny_details {
+  user_id               String    @id @db.Uuid
+  skills                String[]
+  experience_years      Int?
+  hourly_rate           Decimal?  @db.Decimal(10, 2)
+  bio                   String?
+  availability_schedule Json?
+  created_at            DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime? @default(now()) @db.Timestamptz(6)
+  users                 users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model payments {
+  id             String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  booking_id     String?   @db.Uuid
+  amount         Decimal   @db.Decimal(10, 2)
+  status         String    @db.VarChar(50)
+  transaction_id String?   @db.VarChar(255)
+  created_at     DateTime? @default(now()) @db.Timestamptz(6)
+  bookings       bookings? @relation(fields: [booking_id], references: [id], onUpdate: NoAction)
+}
+
+model profiles {
+  user_id           String    @id @db.Uuid
+  first_name        String?   @db.VarChar(100)
+  last_name         String?   @db.VarChar(100)
+  phone             String?   @db.VarChar(20)
+  address           String?
+  lat               Decimal?  @db.Decimal(10, 8)
+  lng               Decimal?  @db.Decimal(11, 8)
+  profile_image_url String?
+  created_at        DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime? @default(now()) @db.Timestamptz(6)
+  users             users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model reviews {
+  id                               String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  booking_id                       String?   @db.Uuid
+  reviewer_id                      String?   @db.Uuid
+  reviewee_id                      String?   @db.Uuid
+  rating                           Int?
+  comment                          String?
+  created_at                       DateTime? @default(now()) @db.Timestamptz(6)
+  bookings                         bookings? @relation(fields: [booking_id], references: [id], onUpdate: NoAction)
+  users_reviews_reviewee_idTousers users?    @relation("reviews_reviewee_idTousers", fields: [reviewee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_reviews_reviewer_idTousers users?    @relation("reviews_reviewer_idTousers", fields: [reviewer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model users {
+  id                                 String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  email                              String         @unique @db.VarChar(255)
+  password_hash                      String         @db.VarChar(255)
+  role                               String         @db.VarChar(50)
+  is_verified                        Boolean?       @default(false)
+  created_at                         DateTime?      @default(now()) @db.Timestamptz(6)
+  updated_at                         DateTime?      @default(now()) @db.Timestamptz(6)
+  applications                       applications[]
+  bookings_bookings_nanny_idTousers  bookings[]     @relation("bookings_nanny_idTousers")
+  bookings_bookings_parent_idTousers bookings[]     @relation("bookings_parent_idTousers")
+  jobs                               jobs[]
+  messages                           messages[]
+  nanny_details                      nanny_details?
+  profiles                           profiles?
+  reviews_reviews_reviewee_idTousers reviews[]      @relation("reviews_reviewee_idTousers")
+  reviews_reviews_reviewer_idTousers reviews[]      @relation("reviews_reviewer_idTousers")
+}
