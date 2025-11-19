@@ -23,7 +23,7 @@ POST /auth/signup
 
 POST /auth/login
 
-POST /auth/refresh-token
+# POST /auth/refresh-token
 
 POST /auth/forgot-password
 
