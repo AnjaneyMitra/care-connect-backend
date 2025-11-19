@@ -64,3 +64,18 @@ For incremental changes, it is recommended to create new migration files (e.g., 
 ```bash
 cat your_migration_file.sql | docker-compose exec -T db psql -U project_user -d careconnect
 ```
+
+## Seeding Data
+To populate the database with initial test data (users, profiles, jobs), use the Prisma seed command.
+
+### Prerequisites
+Ensure you have installed dependencies:
+```bash
+npm install
+```
+
+### Run Seed Script
+```bash
+npx prisma db seed
+```
+This will insert sample data defined in `prisma/seed.ts`. If the data already exists, you may see a "Unique constraint failed" error, which is expected.
