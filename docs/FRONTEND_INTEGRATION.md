@@ -102,6 +102,15 @@ const response = await fetch('http://localhost:4000/users/me', {
 const currentUser = await response.json();
 ```
 
+#### Fetching All Nannies/Caregivers
+```typescript
+// GET /users/nannies (public endpoint)
+const response = await fetch('http://localhost:4000/users/nannies');
+const nannies = await response.json();
+console.log(`Found ${nannies.length} caregivers`);
+// Each nanny object includes profiles and nanny_details
+```
+
 #### Fetching User Profile
 ```typescript
 // GET /users/:id (public endpoint)

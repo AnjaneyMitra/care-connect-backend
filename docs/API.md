@@ -167,6 +167,55 @@ Retrieve the currently authenticated user's profile.
   }
   ```
 
+#### GET /users/nannies
+Retrieve all users with the role "nanny" (caregivers).
+
+- **Authentication**: Not required
+- **Response**: Array of `User` objects with nanny role
+  ```json
+  [
+    {
+      "id": "uuid",
+      "email": "string",
+      "role": "nanny",
+      "is_verified": boolean,
+      "oauth_provider": "google" | null,
+      "oauth_provider_id": "string" | null,
+      "created_at": "ISO 8601 timestamp",
+      "updated_at": "ISO 8601 timestamp",
+      "profiles": {
+        "user_id": "uuid",
+        "first_name": "string",
+        "last_name": "string",
+        "phone": "string",
+        "address": "string",
+        "lat": "decimal string",
+        "lng": "decimal string",
+        "profile_image_url": "string | null",
+        "created_at": "ISO 8601 timestamp",
+        "updated_at": "ISO 8601 timestamp"
+      },
+      "nanny_details": {
+        "user_id": "uuid",
+        "skills": ["CPR Certified", "First Aid", "Early Childhood Education"],
+        "experience_years": 5,
+        "hourly_rate": "800.00",
+        "bio": "Experienced nanny with...",
+        "availability_schedule": {
+          "monday": ["09:00-17:00"],
+          "tuesday": ["09:00-17:00"]
+        },
+        "created_at": "ISO 8601 timestamp",
+        "updated_at": "ISO 8601 timestamp"
+      }
+    }
+  ]
+  ```
+  **Note**: 
+  - Results are ordered by creation date (newest first)
+  - Sensitive fields excluded: `password_hash`, `oauth_access_token`, `oauth_refresh_token`, `verification_token`, `reset_password_token`
+  - This endpoint is useful for displaying all available caregivers on a search/browse page
+
 #### GET /users/:id
 Retrieve a specific user's profile by ID.
 

@@ -6,7 +6,7 @@ import { UpdateUserDto } from "./dto/update-user.dto";
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   // Auth-related methods
   async create(data: Prisma.usersCreateInput): Promise<users> {
@@ -48,6 +48,22 @@ export class UsersService {
   }
 
   // Profile management methods
+  async findAllNannies() {
+    const nannies = await this.prisma.users.findMany({
+      where: { role: 'nanny' },
+      include: {
+        profiles: true,
+        nanny_details: true,
+      },
+      orderBy: {
+        created_at: 'desc',
+      },
+    });
+
+    // Exclude sensitive fields
+    return nannies.map(({ password_hash, oauth_access_token, oauth_refresh_token, verification_token, reset_password_token, verification_token_expires, reset_password_token_expires, ...nanny }) => nanny);
+  }
+
   async findOne(id: string) {
     const user = await this.prisma.users.findUnique({
       where: { id },

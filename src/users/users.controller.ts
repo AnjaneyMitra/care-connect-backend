@@ -5,7 +5,7 @@ import { AuthGuard } from "@nestjs/passport";
 
 @Controller("users")
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) { }
 
   @UseGuards(AuthGuard("jwt"))
   @Get("me")
@@ -14,6 +14,11 @@ export class UsersController {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password_hash, ...result } = user;
     return result;
+  }
+
+  @Get("nannies")
+  getAllNannies() {
+    return this.usersService.findAllNannies();
   }
 
   @Get(":id")
