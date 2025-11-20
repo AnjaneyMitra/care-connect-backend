@@ -60,7 +60,9 @@ Development mode (with hot reload):
 npm run start:dev
 ```
 
-The API will be available at `http://localhost:3000`.
+The API will be available at `http://localhost:4000`.
+
+**Note**: The backend runs on port 4000 to avoid conflicts with Next.js frontend (port 3000).
 
 ## Running Tests
 
@@ -80,5 +82,6 @@ docker ps
 You should see `care-connect-backend-db-1`.
 
 ### Port Conflicts
-If port 3000 is in use, update `PORT` in `.env`.
-If port 5433 is in use (for DB), update `docker-compose.yml` and `.env`.
+- **Backend Port**: Default is 4000. If in use, update `PORT` in `.env`.
+- **Database Port**: Default is 5433. If in use, update `docker-compose.yml` and `.env`.
+- **Frontend Port**: Next.js uses 3000 by default.

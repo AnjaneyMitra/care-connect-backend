@@ -10,6 +10,12 @@ CREATE TABLE users (
     is_verified BOOLEAN DEFAULT FALSE,
     oauth_provider VARCHAR(50),  -- 'google' for OAuth users, NULL for email/password
     oauth_provider_id VARCHAR(255),  -- Unique ID from Google
+    oauth_access_token TEXT,  -- OAuth access token
+    oauth_refresh_token TEXT,  -- OAuth refresh token
+    verification_token VARCHAR(255),  -- Email verification token
+    verification_token_expires TIMESTAMP WITH TIME ZONE,  -- Verification token expiry
+    reset_password_token VARCHAR(255),  -- Password reset token
+    reset_password_token_expires TIMESTAMP WITH TIME ZONE,  -- Reset token expiry
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT unique_oauth_provider_id UNIQUE (oauth_provider, oauth_provider_id),

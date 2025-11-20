@@ -6,7 +6,8 @@ The backend uses the following environment variables. You don't need to set thes
 
 | Variable | Description | Default/Example |
 |----------|-------------|-----------------|
-| `PORT` | Server port | `3000` |
+| `PORT` | Server port | `4000` |
+| `FRONTEND_URL` | Frontend URL for CORS | `http://localhost:3000` |
 | `DATABASE_URL` | PostgreSQL connection string | `postgresql://user:pass@localhost:5433/db` |
 | `JWT_SECRET` | Secret for signing JWTs | `your-secret-key` |
 | `GOOGLE_MAPS_API_KEY` | Key for Geocoding API | `AIzaSy...` |
@@ -15,15 +16,15 @@ The backend uses the following environment variables. You don't need to set thes
 
 ## Frontend Environment Variables
 
-These are the variables you'll likely need in your frontend application (e.g., `.env.local` in Vite/Next.js).
+These are the variables you'll need in your Next.js application (`.env.local`).
 
 ```bash
 # Base URL for API requests
-VITE_API_BASE_URL=http://localhost:3000
+NEXT_PUBLIC_API_URL=http://localhost:4000
 
 # Google Maps API Key (for frontend maps/places autocomplete)
 # Note: This should be restricted to your domain in Google Cloud Console
-VITE_GOOGLE_MAPS_API_KEY=your_google_maps_key_here
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_google_maps_key_here
 ```
 
 ## Google Maps Setup

@@ -22,30 +22,57 @@
   <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
   [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
-## Description
+# Care Connect Backend
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+A NestJS-based backend API for the Care Connect platform - connecting parents with qualified nannies.
 
-## Project setup
-
-```bash
-$ npm install
-```
-
-## Compile and run the project
+## 🚀 Quick Start
 
 ```bash
-# development
-$ npm run start
+# Install dependencies
+npm install
 
-# watch mode
-$ npm run start:dev
+# Start database
+docker-compose up -d
 
-# production mode
-$ npm run start:prod
+# Create schema and seed data
+PGPASSWORD=davanj123 psql -h localhost -p 5433 -U project_user -d careconnect -f schema.sql
+npx prisma db seed
+
+# Start development server
+npm run start:dev
 ```
 
-## Run tests
+The API will be available at `http://localhost:4000`.
+
+## 📚 Documentation
+
+| Document | Description |
+|----------|-------------|
+| [**Frontend Integration Guide**](./docs/FRONTEND_INTEGRATION.md) | **START HERE** - Complete guide for frontend developers |
+| [**API Reference**](./docs/API.md) | All endpoints, parameters, and responses |
+| [**Type Definitions**](./docs/TYPES.md) | TypeScript interfaces for your Next.js app |
+| [**Environment Setup**](./docs/ENV_SETUP.md) | Required environment variables |
+| [**Setup Guide**](./docs/SETUP.md) | Detailed setup instructions |
+| [**Testing Guide**](./Markdown/TESTING.md) | Database setup, seed data, and running tests |
+
+## 🔑 Key Features
+
+- ✅ **User & Profile Management** - Parent and nanny profiles with detailed information
+- ✅ **Location-Based Search** - Find nearby nannies and jobs using geolocation
+- ✅ **Google Maps Integration** - Geocoding API for address-to-coordinates conversion
+- 🚧 **Authentication** - JWT and Google OAuth (in development)
+- ✅ **CORS Enabled** - Configured for Next.js frontend on port 3000
+
+## 🛠️ Tech Stack
+
+- **Framework**: NestJS
+- **Database**: PostgreSQL (via Docker)
+- **ORM**: Prisma
+- **Validation**: class-validator
+- **Maps**: Google Maps Geocoding API
+
+## 🧪 Run Tests
 
 ```bash
 # unit tests
