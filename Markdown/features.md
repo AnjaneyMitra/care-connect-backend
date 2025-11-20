@@ -4,7 +4,7 @@
 📁 1. Authentication & Authorization
 Features
 
-Email + password signup
+Google OAuth signup/login
 
 Login with JWT authentication
 

@@ -1,24 +1,38 @@
-import { Controller, Post } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Req, Res, UnauthorizedException } from '@nestjs/common';
+import { AuthService } from './auth.service';
+import { AuthGuard } from '@nestjs/passport';
+import { Response } from 'express';
+
 
 @Controller('auth')
 export class AuthController {
+    constructor(private authService: AuthService) { }
+
     @Post('signup')
-    signup() {
-        return 'Signup endpoint';
+    async signup(@Body() userDto: any) {
+        return this.authService.register(userDto);
     }
 
     @Post('login')
-    login() {
-        return 'Login endpoint';
+    async login(@Body() req) {
+        return this.authService.validateUser(req.email, req.password).then((user) => {
+            if (!user) {
+                throw new UnauthorizedException('Invalid credentials');
+            }
+            return this.authService.login(user);
+        });
     }
 
-    @Post('forgot-password')
-    forgotPassword() {
-        return 'Forgot password endpoint';
-    }
+    @Get('google')
+    @UseGuards(AuthGuard('google'))
+    async googleAuth(@Req() req) { }
 
-    @Post('reset-password')
-    resetPassword() {
-        return 'Reset password endpoint';
+    @Get('google/callback')
+    @UseGuards(AuthGuard('google'))
+    async googleAuthRedirect(@Req() req, @Res() res: Response) {
+        const result = await this.authService.googleLogin(req.user);
+        // Redirect to frontend or return token
+        // For now, just return JSON
+        res.json(result);
     }
 }

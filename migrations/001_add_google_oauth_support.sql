@@ -1,4 +1,4 @@
--- Migration: Add Google OAuth Support
+git -- Migration: Add Google OAuth Support
 -- Date: 2025-11-19
 
 -- 1. Make password_hash nullable (OAuth users won't have passwords)
