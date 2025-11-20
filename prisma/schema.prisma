@@ -1,6 +1,5 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -133,9 +132,17 @@ model reviews {
 model users {
   id                                 String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   email                              String         @unique @db.VarChar(255)
-  password_hash                      String         @db.VarChar(255)
+  password_hash                      String?        @db.VarChar(255)
   role                               String         @db.VarChar(50)
   is_verified                        Boolean?       @default(false)
+  oauth_provider                     String?        @db.VarChar(50)
+  oauth_provider_id                  String?        @db.VarChar(255)
+  oauth_access_token                 String?
+  oauth_refresh_token                String?
+  verification_token                 String?        @db.VarChar(255)
+  verification_token_expires         DateTime?      @db.Timestamptz(6)
+  reset_password_token               String?        @db.VarChar(255)
+  reset_password_token_expires       DateTime?      @db.Timestamptz(6)
   created_at                         DateTime?      @default(now()) @db.Timestamptz(6)
   updated_at                         DateTime?      @default(now()) @db.Timestamptz(6)
   applications                       applications[]
@@ -147,4 +154,6 @@ model users {
   profiles                           profiles?
   reviews_reviews_reviewee_idTousers reviews[]      @relation("reviews_reviewee_idTousers")
   reviews_reviews_reviewer_idTousers reviews[]      @relation("reviews_reviewer_idTousers")
+
+  @@unique([oauth_provider, oauth_provider_id])
 }
