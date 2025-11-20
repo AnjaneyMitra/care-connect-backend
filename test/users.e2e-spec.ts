@@ -57,7 +57,7 @@ describe('UsersController (e2e)', () => {
                 .expect((res) => {
                     expect(res.body.email).toBe('parent@example.com');
                     expect(res.body.profiles).toBeTruthy();
-                    expect(res.body.profiles.first_name).toBe('John');
+                    expect(res.body.profiles.first_name).toBe('Rajesh');
                 });
         });
 
@@ -69,7 +69,7 @@ describe('UsersController (e2e)', () => {
                     expect(res.body.email).toBe('nanny@example.com');
                     expect(res.body.nanny_details).toBeTruthy();
                     expect(Array.isArray(res.body.nanny_details.skills)).toBe(true);
-                    expect(res.body.nanny_details.skills).toContain('First Aid');
+                    expect(res.body.nanny_details.skills).toContain('Hindi');
                 });
         });
 
