@@ -58,19 +58,162 @@ The API will be available at `http://localhost:4000`.
 
 ## 🔑 Key Features
 
-- ✅ **User & Profile Management** - Parent and nanny profiles with detailed information
-- ✅ **Location-Based Search** - Find nearby nannies and jobs using geolocation
-- ✅ **Google Maps Integration** - Geocoding API for address-to-coordinates conversion
-- 🚧 **Authentication** - JWT and Google OAuth (in development)
-- ✅ **CORS Enabled** - Configured for Next.js frontend on port 3000
+### ✅ Implemented Features
+
+#### 1. Authentication & Authorization
+- **JWT-based Authentication**: Secure token-based session management
+- **Email/Password Authentication**: Traditional signup and login
+- **Google OAuth 2.0 Integration**: One-click social login
+  - Automatic user creation on first OAuth login
+  - OAuth tokens securely stored in database
+  - Seamless JWT token generation after OAuth
+- **Protected Routes**: JWT strategy guards for sensitive endpoints
+- **Password Security**: Bcrypt hashing with salt rounds
+- **User Verification**: Database fields ready for email verification (not yet implemented)
+- **Password Reset**: Database fields ready for password reset flow (not yet implemented)
+
+#### 2. User & Profile Management
+- **Dual User Roles**: 
+  - **Parent**: Can post jobs and book nannies
+  - **Nanny**: Can apply to jobs and offer services
+  - **Admin**: Reserved for future admin features
+- **Comprehensive User Profiles**:
+  - Personal information (name, phone, address)
+  - Geographic coordinates for location-based matching
+  - Profile image support (URL-based)
+  - Email verification status
+  - OAuth provider information
+- **Nanny-Specific Details**:
+  - Skills array (e.g., "CPR Certified", "First Aid", "Early Childhood Education")
+  - Years of experience
+  - Hourly rate (INR)
+  - Professional bio
+  - Weekly availability schedule (JSON format)
+- **Profile Update API**: Update user and profile information
+- **Profile Image Upload**: Upload/update profile images via URL
+- **Authenticated Profile Access**: GET /users/me endpoint with JWT protection
+
+#### 3. Location-Based Services
+- **Address Geocoding**: 
+  - Convert physical addresses to coordinates using Google Maps API
+  - Accurate lat/lng for location-based searches
+- **Nearby Nanny Search**:
+  - Find nannies within specified radius (default: 10km)
+  - Haversine formula for accurate distance calculation
+  - Returns complete nanny profiles with skills, experience, and availability
+  - Results sorted by proximity
+  - Distance included in response (km)
+- **Nearby Job Search**:
+  - Find job postings within specified radius
+  - Includes parent contact information
+  - Sorted by distance from search location
+  - Distance included in response (km)
+- **Smart Data Filtering**:
+  - Only returns users/jobs with valid coordinates
+  - Excludes sensitive data from responses
+- **Query Parameters**:
+  - Flexible radius configuration
+  - Support for any lat/lng coordinates
+
+#### 4. Security & Data Protection
+- **CORS Configuration**:
+  - Enabled for Next.js frontend (localhost:3000)
+  - Credentials support for JWT cookies
+  - Configurable for production environments
+- **Sensitive Data Exclusion**:
+  - Password hashes never returned in API responses
+  - OAuth tokens excluded from user objects
+  - Verification and reset tokens protected
+- **Password Validation**:
+  - Minimum length requirements
+  - Secure storage with bcrypt
+- **JWT Token Management**:
+  - Configurable expiry via environment variables
+  - Bearer token authentication
+  - Passport.js integration
+
+### 📊 Database Schema
+
+#### Core Tables
+- **users**: Main user account table with authentication data
+  - OAuth support fields (provider, provider_id, access_token, refresh_token)
+  - Verification and password reset token fields
+- **profiles**: Extended user information (name, contact, location, image)
+- **nanny_details**: Nanny-specific professional information
+- **jobs**: Job postings created by parents
+- **applications**: Nanny applications to jobs
+- **bookings**: Confirmed bookings between parents and nannies
+- **chats**: Chat rooms linked to bookings
+- **messages**: Individual messages within chats
+- **reviews**: Reviews and ratings between users
+- **payments**: Payment records for completed bookings
+
+All tables include:
+- UUID primary keys
+- Timestamps (created_at, updated_at)
+- Proper foreign key relationships with cascade deletes
+- Check constraints for data integrity
+
+### 🚧 Planned Features (Database Ready)
+
+The database schema supports these features, but API endpoints are not yet implemented:
+
+#### Jobs & Applications
+- Create, update, delete job postings
+- Nanny application system
+- Application status management (applied, accepted, rejected)
+- Job search and filtering
+
+#### Bookings & Scheduling
+- Create bookings from accepted applications
+- Booking status management (requested, confirmed, cancelled, completed)
+- Start time and end time tracking
+- Booking conflict detection
+
+#### Real-time Messaging
+- Chat creation for active bookings
+- Send and receive messages
+- Message read status tracking
+- File attachments support
+- Real-time updates (WebSocket integration needed)
+
+#### Payments
+- Payment processing integration
+- Transaction ID tracking
+- Payment status management
+- Payment history for users
+- Stripe/Razorpay integration (planned)
+
+#### Reviews & Ratings
+- Post-booking review system
+- Star ratings (1-5)
+- Review comments
+- Bidirectional reviews (parent ↔ nanny)
+- Average rating calculation
+
+#### Email Verification
+- Send verification emails on signup
+- Token-based email verification
+- Resend verification emails
+- Verified user badge
+
+#### Password Reset
+- Request password reset via email
+- Secure token-based reset flow
+- Token expiry management
+- Password strength validation
 
 ## 🛠️ Tech Stack
 
-- **Framework**: NestJS
+- **Framework**: NestJS (Node.js)
+- **Language**: TypeScript
 - **Database**: PostgreSQL (via Docker)
 - **ORM**: Prisma
-- **Validation**: class-validator
+- **Authentication**: JWT, Passport.js, bcrypt
+- **OAuth**: Google OAuth 2.0
+- **Validation**: class-validator, class-transformer
 - **Maps**: Google Maps Geocoding API
+- **Testing**: Jest (E2E and Unit tests)
 
 ## 🧪 Run Tests
 
@@ -85,8 +228,36 @@ $ npm run test:e2e
 $ npm run test:cov
 ```
 
+```
+
 **📖 For detailed testing instructions, database setup, and seed data information, see [TESTING.md](./Markdown/TESTING.md)**
 
+## 📡 API Endpoints Overview
+
+### Authentication
+- `POST /auth/signup` - Register new user
+- `POST /auth/login` - Login with email/password
+- `GET /auth/google` - Initiate Google OAuth
+- `GET /auth/google/callback` - Google OAuth callback
+
+### Users
+- `GET /users/me` - Get current user profile (protected)
+- `GET /users/:id` - Get user by ID
+- `PUT /users/:id` - Update user profile
+- `POST /users/upload-image` - Upload profile image
+
+### Location Services
+- `GET /location/nannies/nearby` - Find nearby nannies
+- `GET /location/jobs/nearby` - Find nearby jobs
+- `POST /location/geocode` - Convert address to coordinates
+
+**📖 For complete API documentation, see [API.md](./docs/API.md)**
+
+## 🌐 CORS Configuration
+
+The backend is configured to accept requests from:
+- **Development**: `http://localhost:3000` (Next.js default)
+- **Production**: Set via `FRONTEND_URL` environment variable
 
 ## Deployment
 

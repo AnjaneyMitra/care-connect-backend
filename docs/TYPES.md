@@ -12,10 +12,15 @@ export interface User {
   email: string;
   role: UserRole;
   is_verified: boolean;
-  created_at: string;
-  updated_at: string;
+  oauth_provider?: 'google' | null;
+  oauth_provider_id?: string | null;
+  created_at: string;  // ISO 8601 timestamp
+  updated_at: string;  // ISO 8601 timestamp
   profiles?: UserProfile;
   nanny_details?: NannyDetails;
+  // Note: Sensitive fields excluded from API responses:
+  // password_hash, oauth_access_token, oauth_refresh_token,
+  // verification_token, reset_password_token
 }
 
 export interface UserProfile {
@@ -33,13 +38,17 @@ export interface UserProfile {
 
 export interface NannyDetails {
   user_id: string;
-  skills: string[];
+  skills: string[];  // e.g., ["CPR Certified", "First Aid", "Early Childhood Education"]
   experience_years: number | null;
-  hourly_rate: string | null; // Decimal stored as string
+  hourly_rate: string | null;  // Decimal stored as string (e.g., "800.00")
   bio: string | null;
-  availability_schedule: Record<string, string[]> | null;
-  created_at: string;
-  updated_at: string;
+  availability_schedule: AvailabilitySchedule | null;
+  created_at: string;  // ISO 8601 timestamp
+  updated_at: string;  // ISO 8601 timestamp
+}
+
+export interface AvailabilitySchedule {
+  [day: string]: string[];  // e.g., { "monday": ["09:00-17:00", "18:00-21:00"] }
 }
 ```
 
@@ -60,6 +69,78 @@ export interface Job {
   status: JobStatus;
   created_at: string;
   updated_at: string;
+}
+```
+
+## Authentication Models
+
+```typescript
+// Authentication DTOs
+export interface SignupDto {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+}
+
+export interface LoginDto {
+  email: string;
+  password: string;
+}
+
+export interface AuthResponse {
+  access_token: string;
+  user: {
+    id: string;
+    email: string;
+    role: UserRole;
+  };
+}
+
+export interface GoogleUser {
+  email: string;
+  oauth_provider_id: string;
+  oauth_access_token?: string;
+  oauth_refresh_token?: string;
+}
+```
+
+## Location Models
+
+```typescript
+export interface Coordinates {
+  lat: number;
+  lng: number;
+}
+
+export interface NearbyNanny {
+  id: string;
+  email: string;
+  role: 'nanny';
+  profile: UserProfile | null;
+  nanny_details: NannyDetails | null;
+  distance: number; // in kilometers
+}
+
+export interface NearbyJob {
+  id: string;
+  title: string;
+  description: string | null;
+  date: string;
+  time: string;
+  location_lat: string | null;
+  location_lng: string | null;
+  status: JobStatus;
+  parent: {
+    id: string;
+    email: string;
+    role: 'parent';
+    profiles: {
+      first_name: string | null;
+      last_name: string | null;
+    } | null;
+  } | null;
+  distance: number; // in kilometers
 }
 ```
 

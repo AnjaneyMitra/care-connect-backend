@@ -28,14 +28,83 @@ In your Next.js application, set the API base URL:
 NEXT_PUBLIC_API_URL=http://localhost:4000
 ```
 
+
 ### 3. Authentication
-Currently, authentication is in development. You can access most endpoints without a token, or use a dummy token if required by specific middleware (check API docs).
+
+The backend supports **JWT-based authentication** with both email/password and Google OAuth.
+
+**Authentication Flow:**
+1. User signs up or logs in
+2. Backend returns JWT access token
+3. Frontend stores token (localStorage, cookies, or session)
+4. Include token in subsequent requests via `Authorization` header
 
 ### 4. Common Workflows
 
+#### User Signup
+```typescript
+// POST /auth/signup
+const response = await fetch('http://localhost:4000/auth/signup', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    email: 'user@example.com',
+    password: 'securePassword123',
+    firstName: 'John',
+    lastName: 'Doe'
+  })
+});
+const newUser = await response.json();
+console.log('User created:', newUser.id);
+```
+
+#### User Login
+```typescript
+// POST /auth/login
+const response = await fetch('http://localhost:4000/auth/login', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    email: 'user@example.com',
+    password: 'securePassword123'
+  })
+});
+const { access_token, user } = await response.json();
+
+// Store token for future requests
+localStorage.setItem('token', access_token);
+console.log('Logged in as:', user.email);
+```
+
+#### Google OAuth Login
+```typescript
+// Redirect user to Google OAuth
+window.location.href = 'http://localhost:4000/auth/google';
+
+// After Google redirects back to /auth/google/callback,
+// the backend will return the token. Handle it in your callback page:
+const urlParams = new URLSearchParams(window.location.search);
+const token = urlParams.get('access_token');
+if (token) {
+  localStorage.setItem('token', token);
+}
+```
+
+#### Making Authenticated Requests
+```typescript
+// GET /users/me (requires authentication)
+const token = localStorage.getItem('token');
+const response = await fetch('http://localhost:4000/users/me', {
+  headers: {
+    'Authorization': `Bearer ${token}`
+  }
+});
+const currentUser = await response.json();
+```
+
 #### Fetching User Profile
 ```typescript
-// GET /users/:id
+// GET /users/:id (public endpoint)
 const response = await fetch(`http://localhost:4000/users/${userId}`);
 const user = await response.json();
 console.log(user.profiles?.first_name);
@@ -52,6 +121,35 @@ const params = new URLSearchParams({
 const response = await fetch(`http://localhost:4000/location/nannies/nearby?${params}`);
 const data = await response.json();
 console.log(data.count, 'nannies found');
+```
+
+#### Finding Nearby Jobs
+```typescript
+// GET /location/jobs/nearby
+const params = new URLSearchParams({
+  lat: '19.0596',
+  lng: '72.8295',
+  radius: '15'
+});
+const response = await fetch(`http://localhost:4000/location/jobs/nearby?${params}`);
+const { success, count, data } = await response.json();
+console.log(`Found ${count} jobs nearby`);
+```
+
+#### Geocoding an Address
+```typescript
+// POST /location/geocode
+const response = await fetch('http://localhost:4000/location/geocode', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    address: 'Bandra West, Mumbai, Maharashtra'
+  })
+});
+const { success, data } = await response.json();
+if (success) {
+  console.log('Coordinates:', data.lat, data.lng);
+}
 ```
 
 ### 5. Test Data
