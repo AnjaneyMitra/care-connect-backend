@@ -148,7 +148,10 @@ export class LocationService {
                         lng: { not: null },
                     },
                 },
-                include: {
+                select: {
+                    id: true,
+                    email: true,
+                    role: true,
                     profiles: true,
                     nanny_details: true,
                 },
@@ -200,7 +203,10 @@ export class LocationService {
                 },
                 include: {
                     users: {
-                        include: {
+                        select: {
+                            id: true,
+                            email: true,
+                            role: true,
                             profiles: {
                                 select: {
                                     first_name: true,

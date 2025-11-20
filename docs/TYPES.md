@@ -19,50 +19,44 @@ export interface User {
 }
 
 export interface UserProfile {
-  id: string;
   user_id: string;
   first_name: string | null;
   last_name: string | null;
   phone: string | null;
   address: string | null;
-  city: string | null;
-  state: string | null;
-  zip_code: string | null;
-  bio: string | null;
+  lat: string | null; // Decimal stored as string
+  lng: string | null; // Decimal stored as string
   profile_image_url: string | null;
-  lat: number | null;
-  lng: number | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface NannyDetails {
-  id: string;
   user_id: string;
-  experience_years: number | null;
-  hourly_rate: number | null;
   skills: string[];
-  certifications: string[];
+  experience_years: number | null;
+  hourly_rate: string | null; // Decimal stored as string
+  bio: string | null;
   availability_schedule: Record<string, string[]> | null;
-  rating: number | null;
-  reviews_count: number;
-  background_check_status: string;
+  created_at: string;
+  updated_at: string;
 }
 ```
 
 ## Job Models
 
 ```typescript
-export type JobStatus = 'open' | 'closed' | 'in_progress' | 'completed' | 'cancelled';
+export type JobStatus = 'open' | 'closed' | 'cancelled';
 
 export interface Job {
   id: string;
   parent_id: string;
   title: string;
   description: string | null;
-  requirements: string[];
-  location_lat: number | null;
-  location_lng: number | null;
-  start_date: string | null;
-  end_date: string | null;
+  date: string; // Date
+  time: string; // Time
+  location_lat: string | null; // Decimal stored as string
+  location_lng: string | null; // Decimal stored as string
   status: JobStatus;
   created_at: string;
   updated_at: string;

@@ -4,9 +4,11 @@ This document provides a comprehensive reference for the Care Connect Backend AP
 
 ## General Information
 
-- **Base URL**: `http://localhost:3000` (Local Development)
+- **Base URL**: `http://localhost:4000` (Local Development)
+- **Frontend URL**: `http://localhost:3000` (Next.js)
 - **API Version**: v1
 - **Content-Type**: `application/json`
+- **CORS**: Enabled for `http://localhost:3000` by default
 
 ## Authentication
 
@@ -91,13 +93,39 @@ Find nannies within a specified radius.
       {
         "id": "string",
         "email": "string",
-        "profile": { ... },
-        "nanny_details": { ... },
+        "role": "nanny",
+        "profile": {
+          "user_id": "string",
+          "first_name": "string",
+          "last_name": "string",
+          "phone": "string",
+          "address": "string",
+          "lat": "string",
+          "lng": "string",
+          "profile_image_url": "string | null",
+          "created_at": "string",
+          "updated_at": "string"
+        },
+        "nanny_details": {
+          "user_id": "string",
+          "skills": ["string"],
+          "experience_years": number,
+          "hourly_rate": "string",
+          "bio": "string",
+          "availability_schedule": {
+            "monday": ["09:00-17:00"],
+            "tuesday": ["09:00-17:00"]
+          },
+          "created_at": "string",
+          "updated_at": "string"
+        },
         "distance": number
       }
     ]
   }
   ```
+  
+  **Note**: Sensitive fields like `password_hash`, `oauth_access_token`, and verification tokens are excluded from responses.
 
 #### GET /location/jobs/nearby
 Find jobs within a specified radius.
@@ -117,14 +145,27 @@ Find jobs within a specified radius.
         "id": "string",
         "title": "string",
         "description": "string",
-        "location_lat": number,
-        "location_lng": number,
-        "distance": number,
-        ...
+        "date": "string",
+        "time": "string",
+        "location_lat": "string",
+        "location_lng": "string",
+        "status": "open",
+        "parent": {
+          "id": "string",
+          "email": "string",
+          "role": "parent",
+          "profiles": {
+            "first_name": "string",
+            "last_name": "string"
+          }
+        },
+        "distance": number
       }
     ]
   }
   ```
+  
+  **Note**: Only non-sensitive parent information is included.
 
 ## Error Responses
 
