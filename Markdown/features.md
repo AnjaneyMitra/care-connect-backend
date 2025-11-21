@@ -1,5 +1,34 @@
 #backend only , no frontend
 
+# Care Connect - On-Demand Nanny Matching Platform
+
+## 🎯 System Architecture Overview
+
+**Model**: On-Demand Auto-Matching (Similar to Uber/Lyft)
+
+**Core Workflow**:
+1. **Parent** creates a service request (date, time, duration, location, requirements)
+2. **System** automatically finds and ranks available nannies based on:
+   - Proximity (within configurable radius)
+   - Availability for requested time slot
+   - Skills matching requirements
+   - Rating and experience
+   - Hourly rate
+3. **System** auto-assigns request to the best-matched nanny
+4. **Nanny** receives instant notification and has limited time to accept/reject
+5. **If accepted**: Booking is automatically created → Service proceeds
+6. **If rejected/timeout**: System auto-assigns to next best match
+7. **Process repeats** until a nanny accepts or no more matches available
+
+**Key Differences from Traditional Job Board**:
+- ❌ No manual job posting by parents
+- ❌ No browsing/applying by nannies
+- ✅ Instant automated matching
+- ✅ Quick acceptance/rejection flow
+- ✅ Automatic re-assignment on rejection
+- ✅ Optimized for speed and convenience
+
+---
 
 📁 1. Authentication & Authorization
 Features
@@ -78,77 +107,141 @@ GET /nannies/nearby?lat=&lng=&radius=
 
 GET /jobs/nearby?lat=&lng=&radius=
 
-📄 4. Job Posting & Management (Parent Side)
+📄 4. Service Request & Auto-Matching System
 Features
 
-Post job with date/time/location
+Parent creates service request with:
+  - Date/time needed
+  - Duration (hours)
+  - Number of children
+  - Special requirements/notes
+  - Location (auto-filled from profile)
 
-Edit or cancel job
+Smart matching algorithm:
+  - Find nannies within radius (e.g., 10km)
+  - Check availability for requested time slot
+  - Filter by skills/experience if specified
+  - Sort by: distance, rating, hourly rate
+  - Auto-assign to best match
 
-Parent job dashboard
+Auto-assignment workflow:
+  - System assigns request to top-ranked available nanny
+  - Nanny receives instant notification
+  - Nanny has X minutes to accept/reject (configurable timeout)
+  - If rejected or timeout → auto-assign to next best nanny
+  - Continue until accepted or no more matches
 
-View applied babysitters
+Request status tracking:
+  - PENDING → ASSIGNED → ACCEPTED → IN_PROGRESS → COMPLETED → CANCELLED
 
-Auto-close job after hiring
+Parent can cancel request before acceptance
+
+View request history and current assignments
 
 Endpoints
 
-POST /jobs
+POST /requests - Create new service request
 
-GET /jobs/:id
+GET /requests/:id - Get request details
 
-GET /jobs/parent/:parentId
+GET /requests/parent/:parentId - Get all parent's requests
 
-PUT /jobs/:id
+PUT /requests/:id/cancel - Cancel pending request
 
-DELETE /jobs/:id
+GET /requests/:id/matches - View potential matches (for transparency)
 
-🧑‍🏫 5. Job Applications (Nanny Side)
+🧑‍🏫 5. Nanny Assignment Management
 Features
 
-Nanny applies to a job
+Nanny receives assignment notifications:
+  - Push notification
+  - Email alert
+  - In-app notification badge
 
-Parent views all applicants
+View assigned request details:
+  - Parent information
+  - Children count and ages
+  - Location and distance
+  - Date/time and duration
+  - Offered rate (based on nanny's hourly rate)
 
-Withdraw application
+Accept or reject assignment:
+  - Accept → creates confirmed booking
+  - Reject → triggers re-assignment to next nanny
+  - Timeout (no response) → auto-reject and re-assign
 
-Track application status
+Rejection reasons (optional):
+  - Not available
+  - Too far
+  - Rate too low
+  - Other
+
+View assignment history
+
+Track acceptance rate (for nanny performance metrics)
 
 Endpoints
 
-POST /applications
+GET /assignments/nanny/:nannyId - Get all assignments for nanny
 
-GET /applications/job/:jobId
+GET /assignments/:id - Get assignment details
 
-GET /applications/nanny/:nannyId
+PUT /assignments/:id/accept - Accept assignment
 
-DELETE /applications/:id
+PUT /assignments/:id/reject - Reject assignment (with optional reason)
+
+GET /assignments/pending - Get pending assignments requiring action
 
 📅 6. Booking System
 Features
 
-Parent selects nanny → create booking
-
-Nanny accepts/declines
+Booking automatically created when nanny accepts assignment
 
 Booking lifecycle:
+  - CONFIRMED → IN_PROGRESS → COMPLETED → CANCELLED
 
-REQUESTED → ACCEPTED → IN_PROGRESS → COMPLETED → CANCELLED
+Parent can view booking details:
+  - Assigned nanny information
+  - Service date/time and duration
+  - Total cost calculation
+  - Nanny contact info (revealed after confirmation)
 
+Nanny can view booking details:
+  - Parent information
+  - Children details
+  - Location and directions
+  - Expected earnings
 
-Track service timings
+Start/End service tracking:
+  - Nanny marks service as started (IN_PROGRESS)
+  - Nanny marks service as completed
+  - Actual duration tracked for payment
 
-Auto-cancel unaccepted bookings
+Cancellation policies:
+  - Parent can cancel (with potential fee if last minute)
+  - Nanny can cancel (triggers re-assignment)
+  - Auto-cancel if nanny doesn't show up
+
+Service completion:
+  - Both parties confirm completion
+  - Triggers payment release
+  - Opens review period
 
 Endpoints
 
-POST /bookings
+GET /bookings/:id - Get booking details
 
-PUT /bookings/:id/status
+GET /bookings/parent/:parentId - Get all parent's bookings
 
-GET /bookings/parent/:parentId
+GET /bookings/nanny/:nannyId - Get all nanny's bookings
 
-GET /bookings/nanny/:nannyId
+PUT /bookings/:id/start - Mark service as started (nanny only)
+
+PUT /bookings/:id/complete - Mark service as completed
+
+PUT /bookings/:id/cancel - Cancel booking (with reason)
+
+GET /bookings/active - Get currently active bookings
 
 💬 7. Messaging System (Real-Time Chat)
 Features
@@ -217,26 +310,47 @@ GET /payments/booking/:id
 ⭐ 9. Reviews & Ratings
 Features
 
-Parent leaves rating after job completed
+Parent leaves rating after service completed
 
-Rating average auto-updated
+Nanny can also rate parent (bidirectional)
+
+Rating average auto-updated for both users
+
+Review linked to specific booking
 
 Review moderation (admin)
 
-Edit/delete review (within allowed policy)
+Edit/delete review (within allowed policy - e.g., 24 hours)
+
+Rating categories:
+  - Overall rating (1-5 stars)
+  - Punctuality
+  - Professionalism
+  - Care quality
+  - Communication
 
 Endpoints
 
-POST /reviews
+POST /reviews - Create review after booking completion
 
-GET /reviews/nanny/:id
+GET /reviews/nanny/:id - Get all reviews for a nanny
+
+GET /reviews/parent/:id - Get all reviews for a parent
+
+GET /reviews/booking/:bookingId - Get review for specific booking
+
+PUT /reviews/:id - Edit review (within allowed timeframe)
+
+DELETE /reviews/:id - Delete review (admin only)
 
 🛡️ 10. Admin Module
 Features
 
-Manage users (ban, suspend)
+Manage users (ban, suspend, verify)
 
-View all jobs & bookings
+View all service requests & bookings
+
+View assignment history and metrics
 
 Resolve disputes
 
@@ -244,15 +358,30 @@ Monitor payments & payouts
 
 Review moderation
 
-Analytics dashboard (optional)
+Matching algorithm configuration:
+  - Adjust matching radius
+  - Set assignment timeout duration
+  - Configure re-assignment rules
+
+Analytics dashboard (optional):
+  - Request completion rate
+  - Average assignment acceptance rate per nanny
+  - Popular service times
+  - Revenue metrics
 
 Endpoints
 
 GET /admin/users
 
-GET /admin/jobs
+GET /admin/requests
+
+GET /admin/assignments
+
+GET /admin/bookings
 
 GET /admin/payments
+
+PUT /admin/settings/matching - Update matching algorithm settings
 
 🔔 11. Notifications System
 Features
@@ -265,15 +394,29 @@ SMS alerts (optional – Twilio/MSG91)
 
 Notifications for:
 
-Booking created
+Service request created (parent confirmation)
 
-Booking accepted
+Assignment sent to nanny (nanny alert)
 
-Job application
+Assignment accepted (parent notification)
 
-Message received
+Assignment rejected (parent notification - reassigning)
 
-Payment completed
+Booking confirmed (both parties)
+
+Service starting soon (reminder - 1 hour before)
+
+Service started (parent notification)
+
+Service completed (both parties)
+
+Payment completed (both parties)
+
+Message received (both parties)
+
+Cancellation alerts (both parties)
+
+Re-assignment in progress (parent notification)
 
 Endpoints
 
