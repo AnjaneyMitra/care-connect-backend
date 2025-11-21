@@ -6,7 +6,7 @@ import { UpdateUserDto } from "./dto/update-user.dto";
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   // Auth-related methods
   async create(data: Prisma.usersCreateInput): Promise<users> {
@@ -50,18 +50,29 @@ export class UsersService {
   // Profile management methods
   async findAllNannies() {
     const nannies = await this.prisma.users.findMany({
-      where: { role: 'nanny' },
+      where: { role: "nanny" },
       include: {
         profiles: true,
         nanny_details: true,
       },
       orderBy: {
-        created_at: 'desc',
+        created_at: "desc",
       },
     });
 
     // Exclude sensitive fields
-    return nannies.map(({ password_hash, oauth_access_token, oauth_refresh_token, verification_token, reset_password_token, verification_token_expires, reset_password_token_expires, ...nanny }) => nanny);
+    return nannies.map(
+      ({
+        password_hash,
+        oauth_access_token,
+        oauth_refresh_token,
+        verification_token,
+        reset_password_token,
+        verification_token_expires,
+        reset_password_token_expires,
+        ...nanny
+      }) => nanny,
+    );
   }
 
   async findOne(id: string) {
@@ -80,9 +91,12 @@ export class UsersService {
     return user;
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto | Prisma.usersUpdateInput) {
+  async update(
+    id: string,
+    updateUserDto: UpdateUserDto | Prisma.usersUpdateInput,
+  ) {
     // Handle both UpdateUserDto and Prisma.usersUpdateInput
-    if ('firstName' in updateUserDto || 'lastName' in updateUserDto) {
+    if ("firstName" in updateUserDto || "lastName" in updateUserDto) {
       // Handle UpdateUserDto
       const dto = updateUserDto as UpdateUserDto;
       const {
@@ -101,7 +115,15 @@ export class UsersService {
       } = dto;
 
       // Update basic profile info
-      if (firstName || lastName || phone || address || lat || lng || profileImageUrl) {
+      if (
+        firstName ||
+        lastName ||
+        phone ||
+        address ||
+        lat ||
+        lng ||
+        profileImageUrl
+      ) {
         await this.prisma.profiles.upsert({
           where: { user_id: id },
           update: {
@@ -128,7 +150,13 @@ export class UsersService {
       }
 
       // Update nanny details if provided
-      if (skills || experienceYears || hourlyRate || bio || availabilitySchedule) {
+      if (
+        skills ||
+        experienceYears ||
+        hourlyRate ||
+        bio ||
+        availabilitySchedule
+      ) {
         await this.prisma.nanny_details.upsert({
           where: { user_id: id },
           update: {

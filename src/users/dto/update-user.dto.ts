@@ -1,52 +1,58 @@
-import { IsString, IsOptional, IsNumber, IsArray, IsObject } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsNumber,
+  IsArray,
+  IsObject,
+} from "class-validator";
 
 export class UpdateUserDto {
-    @IsOptional()
-    @IsString()
-    firstName?: string;
+  @IsOptional()
+  @IsString()
+  firstName?: string;
 
-    @IsOptional()
-    @IsString()
-    lastName?: string;
+  @IsOptional()
+  @IsString()
+  lastName?: string;
 
-    @IsOptional()
-    @IsString()
-    phone?: string;
+  @IsOptional()
+  @IsString()
+  phone?: string;
 
-    @IsOptional()
-    @IsString()
-    address?: string;
+  @IsOptional()
+  @IsString()
+  address?: string;
 
-    @IsOptional()
-    @IsNumber()
-    lat?: number;
+  @IsOptional()
+  @IsNumber()
+  lat?: number;
 
-    @IsOptional()
-    @IsNumber()
-    lng?: number;
+  @IsOptional()
+  @IsNumber()
+  lng?: number;
 
-    @IsOptional()
-    @IsString()
-    profileImageUrl?: string;
+  @IsOptional()
+  @IsString()
+  profileImageUrl?: string;
 
-    @IsOptional()
-    @IsArray()
-    @IsString({ each: true })
-    skills?: string[];
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  skills?: string[];
 
-    @IsOptional()
-    @IsNumber()
-    experienceYears?: number;
+  @IsOptional()
+  @IsNumber()
+  experienceYears?: number;
 
-    @IsOptional()
-    @IsNumber()
-    hourlyRate?: number;
+  @IsOptional()
+  @IsNumber()
+  hourlyRate?: number;
 
-    @IsOptional()
-    @IsString()
-    bio?: string;
+  @IsOptional()
+  @IsString()
+  bio?: string;
 
-    @IsOptional()
-    @IsObject()
-    availabilitySchedule?: any;
+  @IsOptional()
+  @IsObject()
+  availabilitySchedule?: any;
 }

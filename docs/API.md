@@ -410,27 +410,101 @@ Find job postings within a specified radius from given coordinates.
   - Parent information included for contact purposes
   - Sensitive parent data excluded from response
 
-## Data Models
+### Service Requests (Auto-Matching)
 
-### User Roles
-- `parent`: Can post jobs, book nannies
-- `nanny`: Can apply to jobs, be booked by parents
-- `admin`: Administrative access (not fully implemented)
+#### POST /requests
+Create a new service request. This triggers the auto-matching algorithm to find a nanny.
 
-### Job Status
-- `open`: Job is available for applications
-- `closed`: Job is no longer available
+- **Authentication**: Required (Parent)
+- **Request Body**:
+  ```json
+  {
+    "date": "2025-12-01", // YYYY-MM-DD
+    "start_time": "14:00:00", // HH:MM:SS
+    "duration_hours": 4,
+    "num_children": 2,
+    "children_ages": [3, 5],
+    "special_requirements": "One child has peanut allergy", // Optional
+    "max_hourly_rate": 500 // Optional
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "id": "uuid",
+    "status": "pending", // or "assigned" if match found immediately
+    "date": "2025-12-01T00:00:00.000Z",
+    "start_time": "1970-01-01T14:00:00.000Z",
+    "duration_hours": "4",
+    "location_lat": "19.07600000",
+    "location_lng": "72.87770000",
+    "created_at": "..."
+  }
+  ```
 
-### Application Status (Not yet implemented in API)
-- `applied`: Nanny has applied to job
-- `accepted`: Parent accepted the application
-- `rejected`: Parent rejected the application
+#### GET /requests/:id
+Get details of a specific service request.
 
-### Booking Status (Not yet implemented in API)
-- `requested`: Booking requested by parent
-- `confirmed`: Nanny confirmed the booking
-- `cancelled`: Booking was cancelled
-- `completed`: Booking completed successfully
+- **Authentication**: Required
+- **Response**: Request object with nested assignments (if authorized)
+
+#### GET /requests/parent/me
+Get all service requests created by the logged-in parent.
+
+- **Authentication**: Required (Parent)
+- **Response**: Array of service requests
+
+### Assignments (Nanny Side)
+
+#### GET /assignments/nanny/me
+Get all assignments for the logged-in nanny.
+
+- **Authentication**: Required (Nanny)
+- **Response**: Array of assignments with request details
+
+#### GET /assignments/pending
+Get only pending assignments that require action.
+
+- **Authentication**: Required (Nanny)
+- **Response**: Array of pending assignments
+
+#### PUT /assignments/:id/accept
+Accept an assignment. This automatically creates a confirmed booking.
+
+- **Authentication**: Required (Nanny)
+- **Response**:
+  ```json
+  {
+    "assignment": { "status": "accepted", ... },
+    "booking": { "id": "uuid", "status": "confirmed", ... }
+  }
+  ```
+
+#### PUT /assignments/:id/reject
+Reject an assignment. This triggers the system to find the next available nanny.
+
+- **Authentication**: Required (Nanny)
+- **Request Body**:
+  ```json
+  {
+    "reason": "Not available at this time" // Optional
+  }
+  ```
+- **Response**: `{ "success": true }`
+
+### Bookings
+
+#### GET /bookings/:id
+Get booking details.
+
+- **Authentication**: Required
+- **Response**: Booking object with parent and nanny details.
+
+#### GET /bookings/active
+Get currently active/confirmed bookings.
+
+- **Authentication**: Required
+- **Response**: Array of bookings.
 
 ## Error Responses
 

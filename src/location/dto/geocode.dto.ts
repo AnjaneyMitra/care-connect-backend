@@ -1,7 +1,7 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsString } from "class-validator";
 
 export class GeocodeAddressDto {
-    @IsNotEmpty()
-    @IsString()
-    address: string;
+  @IsNotEmpty()
+  @IsString()
+  address: string;
 }

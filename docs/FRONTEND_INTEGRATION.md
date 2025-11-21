@@ -78,15 +78,22 @@ console.log('Logged in as:', user.email);
 
 #### Google OAuth Login
 ```typescript
-// Redirect user to Google OAuth
-window.location.href = 'http://localhost:4000/auth/google';
+// 1. Redirect user to Google OAuth endpoint on backend
+// You can specify the role ('parent' or 'nanny') in the query param
+const role = 'parent'; // or 'nanny'
+window.location.href = `http://localhost:4000/auth/google?role=${role}`;
 
-// After Google redirects back to /auth/google/callback,
-// the backend will return the token. Handle it in your callback page:
+// 2. Create a page at /auth/callback in your Next.js app
+// The backend will redirect here with ?access_token=...
+
+// In your /auth/callback page (useEffect):
 const urlParams = new URLSearchParams(window.location.search);
 const token = urlParams.get('access_token');
+
 if (token) {
   localStorage.setItem('token', token);
+  // Redirect to dashboard
+  window.location.href = '/dashboard';
 }
 ```
 
@@ -132,17 +139,30 @@ const data = await response.json();
 console.log(data.count, 'nannies found');
 ```
 
-#### Finding Nearby Jobs
+#### Creating a Service Request (Auto-Matching)
 ```typescript
-// GET /location/jobs/nearby
-const params = new URLSearchParams({
-  lat: '19.0596',
-  lng: '72.8295',
-  radius: '15'
+// POST /requests
+const token = localStorage.getItem('token');
+const response = await fetch('http://localhost:4000/requests', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  },
+  body: JSON.stringify({
+    date: '2025-12-01',
+    start_time: '14:00:00',
+    duration_hours: 4,
+    num_children: 2,
+    children_ages: [3, 5],
+    special_requirements: 'Peanut allergy'
+  })
 });
-const response = await fetch(`http://localhost:4000/location/jobs/nearby?${params}`);
-const { success, count, data } = await response.json();
-console.log(`Found ${count} jobs nearby`);
+const request = await response.json();
+console.log('Request created, status:', request.status);
+if (request.status === 'assigned') {
+  console.log('Nanny assigned immediately!');
+}
 ```
 
 #### Geocoding an Address
