@@ -4,6 +4,8 @@ import { AuthGuard } from '@nestjs/passport';
 import { Response } from 'express';
 
 
+import { GoogleOauthGuard } from './guards/google-oauth.guard';
+
 @Controller('auth')
 export class AuthController {
     constructor(private authService: AuthService) { }
@@ -24,15 +26,19 @@ export class AuthController {
     }
 
     @Get('google')
-    @UseGuards(AuthGuard('google'))
+    @UseGuards(GoogleOauthGuard)
     async googleAuth(@Req() req) { }
 
     @Get('google/callback')
     @UseGuards(AuthGuard('google'))
     async googleAuthRedirect(@Req() req, @Res() res: Response) {
         const result = await this.authService.googleLogin(req.user);
-        // Redirect to frontend or return token
-        // For now, just return JSON
-        res.json(result);
+
+        // Redirect to frontend with token
+        // Frontend URL should be configurable, defaulting to localhost:3000
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+
+        // Redirect to a dedicated callback page on frontend
+        res.redirect(`${frontendUrl}/auth/callback?access_token=${result.access_token}`);
     }
 }

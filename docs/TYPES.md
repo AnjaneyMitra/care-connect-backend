@@ -43,6 +43,8 @@ export interface NannyDetails {
   hourly_rate: string | null;  // Decimal stored as string (e.g., "800.00")
   bio: string | null;
   availability_schedule: AvailabilitySchedule | null;
+  acceptance_rate?: string | null; // Decimal stored as string
+  is_available_now?: boolean;
   created_at: string;  // ISO 8601 timestamp
   updated_at: string;  // ISO 8601 timestamp
 }
@@ -52,7 +54,60 @@ export interface AvailabilitySchedule {
 }
 ```
 
-## Job Models
+## Service Request & Assignment Models
+
+```typescript
+export type RequestStatus = 'pending' | 'assigned' | 'accepted' | 'in_progress' | 'completed' | 'cancelled';
+export type AssignmentStatus = 'pending' | 'accepted' | 'rejected' | 'timeout';
+export type BookingStatus = 'confirmed' | 'in_progress' | 'completed' | 'cancelled';
+
+export interface ServiceRequest {
+  id: string;
+  parent_id: string;
+  date: string; // YYYY-MM-DD
+  start_time: string; // HH:MM:SS
+  duration_hours: string; // Decimal string
+  num_children: number;
+  children_ages: number[] | null;
+  special_requirements: string | null;
+  location_lat: string; // Decimal string
+  location_lng: string; // Decimal string
+  status: RequestStatus;
+  current_assignment_id: string | null;
+  max_hourly_rate: string | null;
+  created_at: string;
+  updated_at: string;
+  assignments?: Assignment[];
+}
+
+export interface Assignment {
+  id: string;
+  request_id: string;
+  nanny_id: string;
+  assigned_at: string;
+  response_deadline: string;
+  status: AssignmentStatus;
+  rejection_reason: string | null;
+  responded_at: string | null;
+  rank_position: number;
+  created_at: string;
+  updated_at: string;
+  service_request?: ServiceRequest;
+}
+
+export interface Booking {
+  id: string;
+  parent_id: string;
+  nanny_id: string;
+  status: BookingStatus;
+  start_time: string;
+  end_time: string;
+  created_at: string;
+  updated_at: string;
+}
+```
+
+## Job Models (Deprecated)
 
 ```typescript
 export type JobStatus = 'open' | 'closed' | 'cancelled';

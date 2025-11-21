@@ -70,7 +70,7 @@ export class AuthService {
                 // Create new user
                 user = await this.usersService.create({
                     email: googleUser.email,
-                    role: 'parent', // Default role
+                    role: googleUser.role || 'parent', // Use role from state or default
                     is_verified: true,
                     oauth_provider: 'google',
                     oauth_provider_id: googleUser.oauth_provider_id,
