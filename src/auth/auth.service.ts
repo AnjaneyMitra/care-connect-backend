@@ -69,7 +69,7 @@ export class AuthService {
                     is_verified: true,
                 });
             } else {
-                // Create new user
+                // Create new user with profile
                 user = await this.usersService.create({
                     email: googleUser.email,
                     role: 'parent', // Default role
@@ -78,6 +78,13 @@ export class AuthService {
                     oauth_provider_id: googleUser.oauth_provider_id,
                     oauth_access_token: googleUser.oauth_access_token,
                     oauth_refresh_token: googleUser.oauth_refresh_token,
+                    profiles: {
+                        create: {
+                            first_name: googleUser.firstName,
+                            last_name: googleUser.lastName,
+                            profile_image_url: googleUser.picture,
+                        }
+                    }
                 });
             }
         }
