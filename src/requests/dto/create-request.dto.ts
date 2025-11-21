@@ -32,6 +32,11 @@ export class CreateRequestDto {
     special_requirements?: string;
 
     @IsOptional()
+    @IsArray()
+    @IsString({ each: true })
+    required_skills?: string[];
+
+    @IsOptional()
     @IsNumber()
     @Min(0)
     max_hourly_rate?: number;
