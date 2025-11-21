@@ -161,6 +161,83 @@ if (success) {
 }
 ```
 
+#### Booking a Nanny
+Once a nanny is selected (and in the future, accepted the request), a booking is created.
+
+```typescript
+// POST /bookings (Temporary manual creation)
+const response = await fetch('http://localhost:4000/bookings', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    jobId: 'job-uuid',
+    nannyId: 'nanny-uuid'
+  })
+});
+const booking = await response.json();
+console.log('Booking created:', booking.id);
+```
+
+#### Real-Time Chat
+The backend uses **Socket.io** for real-time messaging.
+
+**1. Install Client Library**
+```bash
+npm install socket.io-client
+```
+
+**2. Connect to WebSocket**
+```typescript
+import { io } from 'socket.io-client';
+
+const socket = io('http://localhost:4000', {
+  auth: {
+    token: localStorage.getItem('token') // Send JWT for auth
+  }
+});
+
+socket.on('connect', () => {
+  console.log('Connected to chat server:', socket.id);
+});
+
+// Join a chat room (use chatId from booking details)
+socket.emit('joinRoom', chatId);
+```
+
+**3. Send & Receive Messages**
+```typescript
+// Listen for incoming messages
+socket.on('newMessage', (message) => {
+  console.log('New message:', message.content);
+  // Update UI
+});
+
+// Send a message
+socket.emit('sendMessage', {
+  chatId: chatId,
+  content: 'Hello, are you available?',
+  attachmentUrl: null
+});
+```
+
+**4. Typing Indicators & Read Receipts**
+```typescript
+// Send typing status
+socket.emit('typing', { chatId, isTyping: true });
+
+// Listen for typing
+socket.on('typing', ({ userId, isTyping }) => {
+  if (isTyping) showTypingIndicator(userId);
+  else hideTypingIndicator(userId);
+});
+
+// Mark as read
+socket.emit('markAsRead', messageId);
+```
+
 ### 5. Test Data
 Use these credentials to test:
 - **Parent**: `parent@example.com`

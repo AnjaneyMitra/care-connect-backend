@@ -515,29 +515,121 @@ The following features are planned but not yet available via API:
 - `PUT /applications/:id` - Update application status
 
 ### Bookings
-- `POST /bookings` - Create a booking
-- `GET /bookings/parent/:parentId` - Get parent's bookings
-- `GET /bookings/nanny/:nannyId` - Get nanny's bookings
-- `PUT /bookings/:id` - Update booking status
 
-### Jobs
-- `POST /jobs` - Create a job posting
-- `GET /jobs` - List all jobs
-- `GET /jobs/:id` - Get job details
-- `PUT /jobs/:id` - Update job
-- `DELETE /jobs/:id` - Delete job
+#### POST /bookings
+Create a new booking manually (Temporary endpoint for testing).
 
-### Reviews
-- `POST /reviews` - Create a review
-- `GET /reviews/user/:userId` - Get user's reviews
-- `GET /reviews/booking/:bookingId` - Get booking review
+- **Authentication**: Required (JWT)
+- **Request Body**:
+  ```json
+  {
+    "jobId": "uuid",
+    "nannyId": "uuid"
+  }
+  ```
+- **Response**: `Booking` object
+  ```json
+  {
+    "id": "uuid",
+    "job_id": "uuid",
+    "parent_id": "uuid",
+    "nanny_id": "uuid",
+    "status": "CONFIRMED",
+    "start_time": "ISO 8601 timestamp",
+    "created_at": "ISO 8601 timestamp",
+    "updated_at": "ISO 8601 timestamp"
+  }
+  ```
 
-### Messaging
-- `POST /chats` - Create a chat
-- `GET /chats/:bookingId` - Get chat for booking
-- `POST /messages` - Send a message
-- `GET /messages/:chatId` - Get messages in chat
-- `PUT /messages/:id/read` - Mark message as read
+#### GET /bookings/active
+Get all active bookings (CONFIRMED or IN_PROGRESS) for the current user.
+
+- **Authentication**: Required (JWT)
+- **Response**: Array of `Booking` objects with job and profile details.
+
+#### GET /bookings/parent/me
+Get all bookings for the current parent user.
+
+- **Authentication**: Required (JWT - Parent role)
+- **Response**: Array of `Booking` objects.
+
+#### GET /bookings/nanny/me
+Get all bookings for the current nanny user.
+
+- **Authentication**: Required (JWT - Nanny role)
+- **Response**: Array of `Booking` objects.
+
+#### GET /bookings/:id
+Get details of a specific booking.
+
+- **Authentication**: Required (JWT - User must be part of booking)
+- **Response**: `Booking` object with full details.
+
+#### PUT /bookings/:id/start
+Mark a booking as IN_PROGRESS.
+
+- **Authentication**: Required (JWT - Nanny only)
+- **Response**: Updated `Booking` object.
+
+#### PUT /bookings/:id/complete
+Mark a booking as COMPLETED.
+
+- **Authentication**: Required (JWT - Nanny or Parent)
+- **Response**: Updated `Booking` object.
+
+#### PUT /bookings/:id/cancel
+Cancel a booking.
+
+- **Authentication**: Required (JWT - Nanny or Parent)
+- **Request Body**:
+  ```json
+  {
+    "reason": "string"
+  }
+  ```
+- **Response**: Updated `Booking` object.
+
+### Messaging (Chat)
+
+#### POST /chat
+Create a new chat room manually.
+
+- **Authentication**: Required (JWT)
+- **Request Body**:
+  ```json
+  {
+    "bookingId": "uuid"
+  }
+  ```
+- **Response**: `Chat` object.
+
+#### GET /chat/booking/:bookingId
+Get the chat room associated with a booking.
+
+- **Authentication**: Required (JWT)
+- **Response**: `Chat` object with latest messages.
+
+#### GET /chat/:chatId/messages
+Get message history for a chat room with pagination.
+
+- **Authentication**: Required (JWT)
+- **Query Parameters**:
+  - `page` (number, default: 1)
+  - `limit` (number, default: 50)
+- **Response**: Array of `Message` objects.
+
+#### POST /chat/:chatId/message
+Send a message via HTTP (Alternative to WebSocket).
+
+- **Authentication**: Required (JWT)
+- **Request Body**:
+  ```json
+  {
+    "content": "string",
+    "attachmentUrl": "string" // Optional
+  }
+  ```
+- **Response**: Created `Message` object.
 
 ### Payments
 - `POST /payments` - Process payment
