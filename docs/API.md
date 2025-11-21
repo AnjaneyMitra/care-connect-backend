@@ -676,6 +676,47 @@ Manually trigger a notification (for testing/admin).
   ```
 - **Response**: Success status.
 
+### Admin
+
+All admin endpoints require JWT authentication AND admin role.
+
+#### GET /admin/users
+Get all users in the system.
+
+- **Authentication**: Required (JWT - Admin only)
+- **Response**: Array of `User` objects with basic info.
+
+#### GET /admin/bookings
+Get all bookings in the system.
+
+- **Authentication**: Required (JWT - Admin only)
+- **Response**: Array of `Booking` objects with job and user details.
+
+#### GET /admin/stats
+Get system statistics.
+
+- **Authentication**: Required (JWT - Admin only)
+- **Response**:
+  ```json
+  {
+    "totalUsers": number,
+    "totalBookings": number,
+    "activeBookings": number
+  }
+  ```
+
+#### PUT /admin/users/:id/verify
+Verify a user account.
+
+- **Authentication**: Required (JWT - Admin only)
+- **Response**: Updated `User` object.
+
+#### PUT /admin/users/:id/ban
+Ban a user account.
+
+- **Authentication**: Required (JWT - Admin only)
+- **Response**: Updated `User` object.
+
 ### Payments
 - `POST /payments` - Process payment
 - `GET /payments/:bookingId` - Get payment for booking
