@@ -631,6 +631,34 @@ Send a message via HTTP (Alternative to WebSocket).
   ```
 - **Response**: Created `Message` object.
 
+### Reviews
+
+#### POST /reviews
+Create a review for a completed booking.
+
+- **Authentication**: Required (JWT)
+- **Request Body**:
+  ```json
+  {
+    "bookingId": "uuid",
+    "rating": number, // 1-5
+    "comment": "string"
+  }
+  ```
+- **Response**: `Review` object.
+
+#### GET /reviews/user/:userId
+Get all reviews received by a specific user (parent or nanny).
+
+- **Authentication**: Not required
+- **Response**: Array of `Review` objects with reviewer details.
+
+#### GET /reviews/booking/:bookingId
+Get the review associated with a specific booking.
+
+- **Authentication**: Not required
+- **Response**: Array of `Review` objects (usually one).
+
 ### Payments
 - `POST /payments` - Process payment
 - `GET /payments/:bookingId` - Get payment for booking
