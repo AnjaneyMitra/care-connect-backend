@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { LocationModule } from './location/location.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { LocationModule } from './location/location.module';
     UsersModule,
     PrismaModule,
     LocationModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [AppService],
