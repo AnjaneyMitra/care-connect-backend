@@ -38,12 +38,14 @@ export class AuthService {
         const user = await this.usersService.create({
             email: userDto.email,
             password_hash: hashedPassword,
-            role: 'parent', // Default role, can be changed
-            first_name: userDto.firstName, // Assuming these fields exist in DTO
-            last_name: userDto.lastName,
-        } as any); // Casting to any because DTO might not match exact Prisma input if we have extra fields or need transformation
-
-        // We might need to create a profile here too, but for now just user
+            role: userDto.role || 'parent', // Use provided role or default to parent
+            profiles: {
+                create: {
+                    first_name: userDto.firstName,
+                    last_name: userDto.lastName,
+                }
+            }
+        });
 
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { password_hash, ...result } = user;
