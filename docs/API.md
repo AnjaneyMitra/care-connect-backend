@@ -659,6 +659,23 @@ Get the review associated with a specific booking.
 - **Authentication**: Not required
 - **Response**: Array of `Review` objects (usually one).
 
+### Notifications
+
+#### POST /notifications/send
+Manually trigger a notification (for testing/admin).
+
+- **Authentication**: Required (JWT)
+- **Request Body**:
+  ```json
+  {
+    "type": "email" | "push" | "sms",
+    "to": "string", // email or user_id or phone
+    "subject": "string", // Optional (for email/push)
+    "content": "string"
+  }
+  ```
+- **Response**: Success status.
+
 ### Payments
 - `POST /payments` - Process payment
 - `GET /payments/:bookingId` - Get payment for booking
