@@ -14,44 +14,51 @@ export class RequestsService {
     private prisma: PrismaService,
     private usersService: UsersService,
     private notificationsService: NotificationsService,
-  ) {}
+  ) { }
 
   async create(parentId: string, createRequestDto: CreateRequestDto) {
     // 1. Get parent profile for location
     const parent = await this.usersService.findOne(parentId);
+    console.log("RequestsService.create parent:", JSON.stringify(parent, null, 2));
     if (
       !parent ||
       !parent.profiles ||
       !parent.profiles.lat ||
       !parent.profiles.lng
     ) {
+      console.log("Parent profile incomplete:", parent?.profiles);
       throw new BadRequestException(
         "Parent profile incomplete. Address and location required.",
       );
     }
 
-    // 2. Create the service request
-    const request = await this.prisma.service_requests.create({
-      data: {
-        parent_id: parentId,
-        date: new Date(createRequestDto.date),
-        start_time: new Date(`1970-01-01T${createRequestDto.start_time}Z`), // Store as time on dummy date
-        duration_hours: createRequestDto.duration_hours,
-        num_children: createRequestDto.num_children,
-        children_ages: createRequestDto.children_ages || [],
-        special_requirements: createRequestDto.special_requirements,
-        required_skills: createRequestDto.required_skills || [],
-        max_hourly_rate: createRequestDto.max_hourly_rate,
-        location_lat: parent.profiles.lat,
-        location_lng: parent.profiles.lng,
-        status: "pending",
-      },
-    });
+    try {
+      // 2. Create the service request
+      const request = await this.prisma.service_requests.create({
+        data: {
+          parent_id: parentId,
+          date: new Date(createRequestDto.date),
+          start_time: new Date(`1970-01-01T${createRequestDto.start_time}Z`), // Store as time on dummy date
+          duration_hours: createRequestDto.duration_hours,
+          num_children: createRequestDto.num_children,
+          children_ages: createRequestDto.children_ages || [],
+          special_requirements: createRequestDto.special_requirements,
+          required_skills: createRequestDto.required_skills || [],
+          max_hourly_rate: createRequestDto.max_hourly_rate,
+          location_lat: parent.profiles.lat,
+          location_lng: parent.profiles.lng,
+          status: "pending",
+        },
+      });
 
-    // 3. Trigger auto-matching
-    await this.triggerMatching(request.id);
+      // 3. Trigger auto-matching
+      await this.triggerMatching(request.id);
 
-    return request;
+      return request;
+    } catch (error) {
+      console.error("Error creating service request:", error);
+      throw error;
+    }
   }
 
   async triggerMatching(requestId: string) {
@@ -132,7 +139,7 @@ export class RequestsService {
   }
 
   async findOne(id: string) {
-    return this.prisma.service_requests.findUnique({
+    const request = await this.prisma.service_requests.findUnique({
       where: { id },
       include: {
         users: {
@@ -143,6 +150,12 @@ export class RequestsService {
         },
       },
     });
+
+    if (!request) {
+      throw new NotFoundException(`Service request with ID ${id} not found`);
+    }
+
+    return request;
   }
 
   async findAllByParent(parentId: string) {
