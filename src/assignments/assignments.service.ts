@@ -91,7 +91,7 @@ export class AssignmentsService {
         request_id: assignment.request_id,
         parent_id: assignment.service_requests.parent_id,
         nanny_id: nannyId,
-        status: "confirmed",
+        status: "CONFIRMED",
         start_time: new Date(
           assignment.service_requests.date.toISOString().split("T")[0] +
           "T" +
