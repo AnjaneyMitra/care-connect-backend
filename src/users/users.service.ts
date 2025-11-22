@@ -6,7 +6,7 @@ import { UpdateUserDto } from "./dto/update-user.dto";
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   // Auth-related methods
   async create(data: Prisma.usersCreateInput): Promise<users> {
@@ -96,7 +96,22 @@ export class UsersService {
     updateUserDto: UpdateUserDto | Prisma.usersUpdateInput,
   ) {
     // Handle both UpdateUserDto and Prisma.usersUpdateInput
-    if ("firstName" in updateUserDto || "lastName" in updateUserDto) {
+    // Check if any UpdateUserDto fields are present
+    const isUpdateUserDto =
+      "firstName" in updateUserDto ||
+      "lastName" in updateUserDto ||
+      "phone" in updateUserDto ||
+      "address" in updateUserDto ||
+      "lat" in updateUserDto ||
+      "lng" in updateUserDto ||
+      "profileImageUrl" in updateUserDto ||
+      "skills" in updateUserDto ||
+      "experienceYears" in updateUserDto ||
+      "hourlyRate" in updateUserDto ||
+      "bio" in updateUserDto ||
+      "availabilitySchedule" in updateUserDto;
+
+    if (isUpdateUserDto) {
       // Handle UpdateUserDto
       const dto = updateUserDto as UpdateUserDto;
       const {
