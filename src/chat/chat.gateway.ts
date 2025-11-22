@@ -7,6 +7,7 @@ import {
   MessageBody,
   ConnectedSocket,
 } from "@nestjs/websockets";
+import { Logger } from "@nestjs/common";
 import { Server, Socket } from "socket.io";
 import { ChatService } from "./chat.service";
 import { JwtService } from "@nestjs/jwt";
@@ -17,13 +18,15 @@ import { JwtService } from "@nestjs/jwt";
   },
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
+  private readonly logger = new Logger(ChatGateway.name);
+
   @WebSocketServer()
   server: Server;
 
   constructor(
     private readonly chatService: ChatService,
     private readonly jwtService: JwtService,
-  ) {}
+  ) { }
 
   async handleConnection(client: Socket) {
     try {
@@ -41,15 +44,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       // Store user info in socket
       client.data.user = payload;
-      console.log(`Client connected: ${client.id}, User: ${payload.sub}`);
+      // Connection successful - no need to log every connection
     } catch (error) {
-      console.log("Connection unauthorized:", error.message);
+      this.logger.warn(`WebSocket connection unauthorized: ${error.message}`);
       client.disconnect();
     }
   }
 
   handleDisconnect(client: Socket) {
-    console.log(`Client disconnected: ${client.id}`);
+    // Normal disconnection - no need to log
   }
 
   @SubscribeMessage("joinRoom")
@@ -58,7 +61,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
   ) {
     client.join(chatId);
-    console.log(`Client ${client.id} joined room ${chatId}`);
     return { event: "joinedRoom", data: chatId };
   }
 
@@ -68,7 +70,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
   ) {
     client.leave(chatId);
-    console.log(`Client ${client.id} left room ${chatId}`);
     return { event: "leftRoom", data: chatId };
   }
 

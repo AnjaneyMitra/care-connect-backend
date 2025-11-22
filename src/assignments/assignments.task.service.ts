@@ -14,8 +14,6 @@ export class AssignmentsTaskService {
 
   @Cron(CronExpression.EVERY_MINUTE)
   async handleAssignmentTimeouts() {
-    this.logger.debug("Checking for assignment timeouts...");
-
     const now = new Date();
     const expiredAssignments = await this.prisma.assignments.findMany({
       where: {
