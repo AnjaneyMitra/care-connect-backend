@@ -11,13 +11,48 @@ export class BookingsService {
   constructor(
     private prisma: PrismaService,
     private chatService: ChatService,
-  ) {}
+  ) { }
 
-  async createBooking(jobId: string, parentId: string, nannyId: string) {
-    // Check if job exists
-    const job = await this.prisma.jobs.findUnique({ where: { id: jobId } });
-    if (!job) {
-      throw new NotFoundException("Job not found");
+  async createBooking(
+    jobId: string | undefined,
+    parentId: string,
+    nannyId: string,
+    date?: string,
+    startTime?: string,
+    endTime?: string,
+  ) {
+    let finalStartTime: Date | undefined;
+    let finalEndTime: Date | undefined;
+
+    // 1. If explicit date and times are provided, use them
+    if (date && startTime && endTime) {
+      // Combine date and time strings (e.g., "2025-11-24" + "T" + "15:30" + ":00")
+      // Ensure time format is HH:MM or HH:MM:SS
+      const formatTime = (t: string) => (t.length === 5 ? `${t}:00` : t);
+
+      finalStartTime = new Date(`${date}T${formatTime(startTime)}`);
+      finalEndTime = new Date(`${date}T${formatTime(endTime)}`);
+
+      if (isNaN(finalStartTime.getTime()) || isNaN(finalEndTime.getTime())) {
+        throw new BadRequestException("Invalid date or time format");
+      }
+    }
+
+    // 2. If no explicit time, try to get from Job
+    if (!finalStartTime && jobId) {
+      const job = await this.prisma.jobs.findUnique({ where: { id: jobId } });
+      if (!job) {
+        throw new NotFoundException("Job not found");
+      }
+      finalStartTime = job.date;
+      // Job doesn't have end time in schema currently, so we leave it null or calculate if duration existed
+    }
+
+    // 3. Validate that we have a start time
+    if (!finalStartTime) {
+      throw new BadRequestException(
+        "Date and Start time are required for direct bookings (or provide a valid Job ID)",
+      );
     }
 
     // Create booking with initial status CONFIRMED
@@ -27,8 +62,8 @@ export class BookingsService {
         parent_id: parentId,
         nanny_id: nannyId,
         status: "CONFIRMED",
-        start_time: job.date, // Assuming job date/time is the start
-        // end_time: calculate based on duration if available in job, or leave null
+        start_time: finalStartTime,
+        end_time: finalEndTime,
       },
     });
 

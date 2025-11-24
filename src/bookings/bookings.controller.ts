@@ -15,19 +15,30 @@ import { AuthGuard } from "@nestjs/passport";
 @Controller("bookings")
 @UseGuards(AuthGuard("jwt"))
 export class BookingsController {
-  constructor(private readonly bookingsService: BookingsService) {}
+  constructor(private readonly bookingsService: BookingsService) { }
 
   // Temporary endpoint for testing creation until Feature 5 is ready
   @Post()
   async createBooking(
-    @Body() body: { jobId: string; nannyId: string },
+    @Body()
+    body: {
+      jobId?: string;
+      nannyId: string;
+      date?: string;
+      startTime?: string;
+      endTime?: string;
+    },
     @Request() req,
   ) {
+    console.log("Received booking request body:", body);
     // Assuming the creator is the parent
     return this.bookingsService.createBooking(
       body.jobId,
       req.user.id,
       body.nannyId,
+      body.date,
+      body.startTime,
+      body.endTime,
     );
   }
 
