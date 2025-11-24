@@ -96,6 +96,38 @@ export class LocationService {
   }
 
   /**
+   * Convert coordinates to human-readable address using Google Reverse Geocoding API
+   */
+  async reverseGeocode(lat: number, lng: number): Promise<string | null> {
+    try {
+      const apiKey = this.configService.get<string>("GOOGLE_MAPS_API_KEY");
+
+      if (!apiKey) {
+        this.logger.warn("Google Maps API key not configured");
+        return null;
+      }
+
+      const response = await this.googleMapsClient.reverseGeocode({
+        params: {
+          latlng: { lat, lng },
+          key: apiKey,
+        },
+      });
+
+      if (response.data.results.length === 0) {
+        this.logger.warn(`No reverse geocoding results found for: ${lat}, ${lng}`);
+        return null;
+      }
+
+      // Return the formatted address from the first result
+      return response.data.results[0].formatted_address;
+    } catch (error) {
+      this.logger.error(`Reverse geocoding error: ${error.message}`, error.stack);
+      return null;
+    }
+  }
+
+  /**
    * Calculate distance between two coordinates using Haversine formula
    * @returns distance in kilometers
    */
@@ -112,9 +144,9 @@ export class LocationService {
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(this.toRadians(lat1)) *
-        Math.cos(this.toRadians(lat2)) *
-        Math.sin(dLng / 2) *
-        Math.sin(dLng / 2);
+      Math.cos(this.toRadians(lat2)) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
 
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     const distance = R * c;
@@ -132,50 +164,66 @@ export class LocationService {
   /**
    * Find nearby nannies within a specified radius
    */
+  /**
+   * Find nearby nannies within a specified radius
+   */
   async findNearbyNannies(
     lat: number,
     lng: number,
     radiusKm: number = 10,
   ): Promise<NearbyNanny[]> {
     try {
-      // Get all nannies with location data
-      const nannies = await this.prisma.users.findMany({
-        where: {
-          role: "nanny",
-          is_verified: true,
-          profiles: {
-            lat: { not: null },
-            lng: { not: null },
-          },
+      // Use raw SQL for efficient distance calculation and filtering
+      // This avoids fetching all nannies and filtering in memory
+      const nannies = await this.prisma.$queryRawUnsafe<any[]>(`
+        SELECT 
+          u.id, 
+          u.email, 
+          u.role,
+          p.first_name,
+          p.last_name,
+          p.phone,
+          p.address,
+          p.lat,
+          p.lng,
+          p.profile_image_url,
+          nd.skills,
+          nd.experience_years,
+          nd.hourly_rate,
+          nd.bio,
+          (6371 * acos(cos(radians(${lat})) * cos(radians(p.lat)) * cos(radians(p.lng) - radians(${lng})) + sin(radians(${lat})) * sin(radians(p.lat)))) AS distance
+        FROM users u
+        JOIN profiles p ON u.id = p.user_id
+        LEFT JOIN nanny_details nd ON u.id = nd.user_id
+        WHERE u.role = 'nanny'
+        AND u.is_verified = true
+        AND p.lat IS NOT NULL
+        AND p.lng IS NOT NULL
+        AND (6371 * acos(cos(radians(${lat})) * cos(radians(p.lat)) * cos(radians(p.lng) - radians(${lng})) + sin(radians(${lat})) * sin(radians(p.lat)))) <= ${radiusKm}
+        ORDER BY distance ASC
+      `);
+
+      // Map raw results to NearbyNanny interface
+      return nannies.map((nanny) => ({
+        id: nanny.id,
+        email: nanny.email,
+        profile: {
+          first_name: nanny.first_name,
+          last_name: nanny.last_name,
+          phone: nanny.phone,
+          address: nanny.address,
+          lat: new Decimal(nanny.lat),
+          lng: new Decimal(nanny.lng),
+          profile_image_url: nanny.profile_image_url,
         },
-        select: {
-          id: true,
-          email: true,
-          role: true,
-          profiles: true,
-          nanny_details: true,
-        },
-      });
-
-      // Calculate distances and filter by radius
-      const nearbyNannies: NearbyNanny[] = nannies
-        .map((nanny) => {
-          const nannyLat = Number(nanny.profiles?.lat);
-          const nannyLng = Number(nanny.profiles?.lng);
-          const distance = this.calculateDistance(lat, lng, nannyLat, nannyLng);
-
-          return {
-            id: nanny.id,
-            email: nanny.email,
-            profile: nanny.profiles,
-            nanny_details: nanny.nanny_details,
-            distance,
-          };
-        })
-        .filter((nanny) => nanny.distance <= radiusKm)
-        .sort((a, b) => a.distance - b.distance); // Sort by distance
-
-      return nearbyNannies;
+        nanny_details: nanny.skills ? {
+          skills: nanny.skills,
+          experience_years: nanny.experience_years,
+          hourly_rate: nanny.hourly_rate ? new Decimal(nanny.hourly_rate) : null,
+          bio: nanny.bio,
+        } : null,
+        distance: Math.round(nanny.distance * 100) / 100,
+      }));
     } catch (error) {
       this.logger.error(
         `Error finding nearby nannies: ${error.message}`,

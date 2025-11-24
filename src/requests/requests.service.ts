@@ -78,13 +78,31 @@ export class RequestsService {
         ? `AND u.id NOT IN (${excludedNannyIds.map((id) => `'${id}'`).join(",")})`
         : "";
 
-    // Find nearby nannies
-    // Using Haversine formula in raw SQL for efficiency
-    const radiusKm = 10;
+    // Hard Filters
+    const radiusKm = 15; // Increased to 15km
+    const maxRateSql = request.max_hourly_rate
+      ? `AND nd.hourly_rate <= ${request.max_hourly_rate}`
+      : "";
+
+    // Skills Filter: Nanny must have ALL required skills
+    // We use array overlap operator && to check if required_skills is contained in nanny skills
+    // But Prisma raw query with arrays can be tricky. 
+    // A simpler approach for raw SQL is to check if the intersection count matches the required count.
+    // However, for simplicity and compatibility, we'll fetch candidates who match other criteria 
+    // and filter by skills in memory if the SQL gets too complex, OR use the @> operator if Postgres supports it well.
+    // Let's try to filter by skills in memory to be safe with array types, 
+    // but we can add a basic check if possible.
+    // Actually, let's do the skills check in memory to ensure correctness with the JSON/Array types.
 
     const nannies = (await this.prisma.$queryRawUnsafe(`
-      SELECT u.id, 
-             (6371 * acos(cos(radians(${request.location_lat})) * cos(radians(p.lat)) * cos(radians(p.lng) - radians(${request.location_lng})) + sin(radians(${request.location_lat})) * sin(radians(p.lat)))) AS distance
+      SELECT 
+        u.id, 
+        u.email,
+        nd.skills,
+        nd.experience_years,
+        nd.hourly_rate,
+        nd.acceptance_rate,
+        (6371 * acos(cos(radians(${request.location_lat})) * cos(radians(p.lat)) * cos(radians(p.lng) - radians(${request.location_lng})) + sin(radians(${request.location_lat})) * sin(radians(p.lat)))) AS distance
       FROM users u
       JOIN profiles p ON u.id = p.user_id
       JOIN nanny_details nd ON u.id = nd.user_id
@@ -92,14 +110,58 @@ export class RequestsService {
       AND u.is_verified = true
       AND nd.is_available_now = true
       ${excludedIdsSql}
+      ${maxRateSql}
       AND (6371 * acos(cos(radians(${request.location_lat})) * cos(radians(p.lat)) * cos(radians(p.lng) - radians(${request.location_lng})) + sin(radians(${request.location_lat})) * sin(radians(p.lat)))) < ${radiusKm}
-      ORDER BY distance ASC
-      LIMIT 5;
     `)) as any[];
 
-    if (nannies.length > 0) {
-      // Assign to the first match
-      const bestMatch = nannies[0];
+    // In-Memory Filtering & Scoring
+    const requiredSkills = request.required_skills || [];
+
+    const scoredNannies = nannies
+      .filter((nanny) => {
+        // Filter by Skills
+        if (requiredSkills.length === 0) return true;
+        const nannySkills = nanny.skills || [];
+        return requiredSkills.every((skill) => nannySkills.includes(skill));
+      })
+      .map((nanny) => {
+        // Calculate Score
+        let score = 0;
+
+        // 1. Distance (Max 30 pts) - Closer is better
+        // 0km = 30pts, 15km = 0pts
+        const distanceScore = Math.max(0, 30 * (1 - nanny.distance / radiusKm));
+        score += distanceScore;
+
+        // 2. Experience (Max 20 pts) - More is better
+        // 10+ years = 20pts
+        const experience = nanny.experience_years || 0;
+        const experienceScore = Math.min(20, experience * 2);
+        score += experienceScore;
+
+        // 3. Acceptance Rate (Max 20 pts)
+        const acceptanceRate = Number(nanny.acceptance_rate) || 0;
+        const acceptanceScore = (acceptanceRate / 100) * 20;
+        score += acceptanceScore;
+
+        // 4. Hourly Rate (Max 10 pts) - Lower is better (Value)
+        // If rate is 0 (unlikely), give max points.
+        // We compare against a baseline, say $50/hr. 
+        // Or simpler: if they are well below max_hourly_rate (if set).
+        // Let's just give points for being affordable.
+        // $10/hr = 10pts, $50/hr = 0pts
+        const rate = Number(nanny.hourly_rate) || 0;
+        const rateScore = Math.max(0, 10 * (1 - (rate - 10) / 40));
+        score += rateScore;
+
+        return { ...nanny, score };
+      })
+      .sort((a, b) => b.score - a.score); // Sort by Score DESC
+
+    if (scoredNannies.length > 0) {
+      // Assign to the top-ranked candidate
+      const bestMatch = scoredNannies[0];
+      console.log(`Best match for request ${requestId}: ${bestMatch.id} (Score: ${bestMatch.score.toFixed(2)})`);
 
       // Create assignment
       const assignment = await this.prisma.assignments.create({

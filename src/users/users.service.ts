@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException, Logger } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { Prisma } from "@prisma/client";
 import { users } from "@prisma/client";
@@ -6,6 +6,8 @@ import { UpdateUserDto } from "./dto/update-user.dto";
 
 @Injectable()
 export class UsersService {
+  private readonly logger = new Logger(UsersService.name);
+
   constructor(private prisma: PrismaService) { }
 
   // Auth-related methods
@@ -129,12 +131,33 @@ export class UsersService {
         availabilitySchedule,
       } = dto;
 
+      // Auto-populate address via reverse geocoding if lat/lng provided but no address
+      let finalAddress = address;
+      if (lat && lng && !address) {
+        try {
+          const { LocationService } = await import('../location/location.service');
+          const { ConfigService } = await import('@nestjs/config');
+          const locationService = new LocationService(
+            new ConfigService(),
+            this.prisma
+          );
+          const geocodedAddress = await locationService.reverseGeocode(lat, lng);
+          if (geocodedAddress) {
+            finalAddress = geocodedAddress;
+            this.logger.log(`Auto-populated address: ${geocodedAddress}`);
+          }
+        } catch (error) {
+          this.logger.warn(`Failed to reverse geocode: ${error.message}`);
+          // Continue without address if reverse geocoding fails
+        }
+      }
+
       // Update basic profile info
       if (
         firstName ||
         lastName ||
         phone ||
-        address ||
+        finalAddress ||
         lat ||
         lng ||
         profileImageUrl
@@ -145,7 +168,7 @@ export class UsersService {
             first_name: firstName,
             last_name: lastName,
             phone,
-            address,
+            address: finalAddress,
             lat,
             lng,
             profile_image_url: profileImageUrl,
@@ -156,7 +179,7 @@ export class UsersService {
             first_name: firstName,
             last_name: lastName,
             phone,
-            address,
+            address: finalAddress,
             lat,
             lng,
             profile_image_url: profileImageUrl,
