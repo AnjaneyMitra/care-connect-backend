@@ -21,13 +21,13 @@ export class RequestsController {
     return this.requestsService.create(req.user.id, createRequestDto);
   }
 
-  @Get(":id")
-  findOne(@Param("id") id: string) {
-    return this.requestsService.findOne(id);
-  }
-
   @Get("parent/me")
   findAllMyRequests(@Request() req) {
     return this.requestsService.findAllByParent(req.user.id);
+  }
+
+  @Get(":id")
+  findOne(@Param("id") id: string) {
+    return this.requestsService.findOne(id);
   }
 }
