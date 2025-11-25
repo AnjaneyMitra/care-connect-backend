@@ -1,30 +1,18 @@
+# Care Connect Backend - V1.0.0
+
 <p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
+  <strong>A comprehensive NestJS-based backend API for connecting parents with qualified nannies</strong>
 </p>
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
-
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
+<p align="center">
+  <a href="#-quick-start">Quick Start</a> •
+  <a href="#-documentation">Documentation</a> •
+  <a href="#-features">Features</a> •
+  <a href="#-tech-stack">Tech Stack</a> •
+  <a href="#-api-endpoints">API Endpoints</a>
 </p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
-# Care Connect Backend
-
-A NestJS-based backend API for the Care Connect platform - connecting parents with qualified nannies.
+---
 
 ## 🚀 Quick Start
 
@@ -56,152 +44,99 @@ The API will be available at `http://localhost:4000`.
 | [**Setup Guide**](./docs/SETUP.md) | Detailed setup instructions |
 | [**Testing Guide**](./Markdown/TESTING.md) | Database setup, seed data, and running tests |
 
-## 🔑 Key Features
+## ✨ Features
 
-### ✅ Implemented Features
+### V1.0.0 - Fully Implemented
 
-#### 1. Authentication & Authorization
+#### 🔐 Authentication & Authorization
 - **JWT-based Authentication**: Secure token-based session management
 - **Email/Password Authentication**: Traditional signup and login
-- **Google OAuth 2.0 Integration**: One-click social login
-  - Automatic user creation on first OAuth login
-  - OAuth tokens securely stored in database
-  - Seamless JWT token generation after OAuth
+- **Google OAuth 2.0**: One-click social login with automatic user creation
 - **Protected Routes**: JWT strategy guards for sensitive endpoints
-- **Password Security**: Bcrypt hashing with salt rounds
-- **User Verification**: Database fields ready for email verification (not yet implemented)
-- **Password Reset**: Database fields ready for password reset flow (not yet implemented)
+- **Password Security**: Bcrypt hashing with configurable salt rounds
+- **Role-Based Access Control**: Parent, Nanny, and Admin roles
 
-#### 2. User & Profile Management
+#### 👤 User & Profile Management
 - **Dual User Roles**: 
-  - **Parent**: Can post jobs and book nannies
-  - **Nanny**: Can apply to jobs and offer services
-  - **Admin**: Reserved for future admin features
-- **Comprehensive User Profiles**:
+  - **Parent**: Create service requests and manage bookings
+  - **Nanny**: Receive assignments and manage availability
+  - **Admin**: System administration and oversight
+- **Comprehensive Profiles**:
   - Personal information (name, phone, address)
   - Geographic coordinates for location-based matching
-  - Profile image support (URL-based)
+  - Profile images (URL-based)
   - Email verification status
-  - OAuth provider information
-- **Nanny-Specific Details**:
-  - Skills array (e.g., "CPR Certified", "First Aid", "Early Childhood Education")
+- **Nanny Professional Details**:
+  - Skills array (CPR, First Aid, Early Childhood Education, etc.)
   - Years of experience
   - Hourly rate (INR)
   - Professional bio
-  - Weekly availability schedule (JSON format)
-- **Profile Update API**: Update user and profile information
-- **Profile Image Upload**: Upload/update profile images via URL
-- **Authenticated Profile Access**: GET /users/me endpoint with JWT protection
+  - Weekly availability schedule
 
-#### 3. Location-Based Services
-- **Address Geocoding**: 
-  - Convert physical addresses to coordinates using Google Maps API
-  - Accurate lat/lng for location-based searches
-- **Nearby Nanny Search**:
-  - Find nannies within specified radius (default: 10km)
-  - Haversine formula for accurate distance calculation
-  - Returns complete nanny profiles with skills, experience, and availability
-  - Results sorted by proximity
-  - Distance included in response (km)
-- **Nearby Job Search**:
-  - Find job postings within specified radius
-  - Includes parent contact information
-  - Sorted by distance from search location
-  - Distance included in response (km)
-- **Smart Data Filtering**:
-  - Only returns users/jobs with valid coordinates
-  - Excludes sensitive data from responses
-- **Query Parameters**:
-  - Flexible radius configuration
-  - Support for any lat/lng coordinates
+#### 📍 Location-Based Services
+- **Address Geocoding**: Convert addresses to coordinates using Google Maps API
+- **Nearby Nanny Search**: Find nannies within specified radius (Haversine formula)
+- **Nearby Job Search**: Find job postings by location
+- **Smart Filtering**: Distance-sorted results with proximity data
 
-#### 4. Security & Data Protection
-- **CORS Configuration**:
-  - Enabled for Next.js frontend (localhost:3000)
-  - Credentials support for JWT cookies
-  - Configurable for production environments
-- **Sensitive Data Exclusion**:
-  - Password hashes never returned in API responses
-  - OAuth tokens excluded from user objects
-  - Verification and reset tokens protected
-- **Password Validation**:
-  - Minimum length requirements
-  - Secure storage with bcrypt
-- **JWT Token Management**:
-  - Configurable expiry via environment variables
-  - Bearer token authentication
-  - Passport.js integration
+#### 🎯 Service Request & Auto-Matching System
+- **On-Demand Requests**: Parents create service requests with date, time, and requirements
+- **Intelligent Matching Algorithm**:
+  - Hard filters: Location radius, hourly rate, required skills
+  - Weighted scoring: Distance (40%), experience (30%), acceptance rate (20%), rate (10%)
+  - Automatic nanny assignment based on optimal match
+- **Assignment Management**: Nannies can accept or reject assignments
+- **Automatic Booking Creation**: Confirmed bookings created upon assignment acceptance
 
-### 📊 Database Schema
+#### 📅 Booking System
+- **Dual Booking Flows**:
+  - **Direct Booking**: Parents directly book specific nannies
+  - **Auto-Matching**: System finds and assigns optimal nanny
+- **Booking Management**: 
+  - Status tracking (CONFIRMED, IN_PROGRESS, COMPLETED, CANCELLED)
+  - Start/complete/cancel operations
+  - Role-based access control
+- **Booking Retrieval**: Get bookings by parent, nanny, or active status
 
-#### Core Tables
-- **users**: Main user account table with authentication data
-  - OAuth support fields (provider, provider_id, access_token, refresh_token)
-  - Verification and password reset token fields
-- **profiles**: Extended user information (name, contact, location, image)
-- **nanny_details**: Nanny-specific professional information
-- **jobs**: Job postings created by parents
-- **applications**: Nanny applications to jobs
-- **bookings**: Confirmed bookings between parents and nannies
-- **chats**: Chat rooms linked to bookings
-- **messages**: Individual messages within chats
-- **reviews**: Reviews and ratings between users
-- **payments**: Payment records for completed bookings
+#### 💬 Real-Time Messaging
+- **Chat System**: Booking-linked chat rooms
+- **WebSocket Support**: Real-time message delivery via Socket.io
+- **Message Features**:
+  - Text messages with optional attachments
+  - Message history with pagination
+  - Typing indicators
+  - Read receipts
+- **HTTP Fallback**: REST API for message sending
 
-All tables include:
-- UUID primary keys
-- Timestamps (created_at, updated_at)
-- Proper foreign key relationships with cascade deletes
-- Check constraints for data integrity
+#### ⭐ Reviews & Ratings
+- **Post-Booking Reviews**: Rate and review after completed bookings
+- **Star Ratings**: 1-5 star rating system
+- **Review Comments**: Detailed feedback
+- **Public Reviews**: View reviews for any user
+- **Bidirectional**: Both parents and nannies can leave reviews
 
-### 🚧 Planned Features (Database Ready)
+#### 🔔 Notifications System
+- **Multi-Channel Support**:
+  - Email notifications
+  - Push notifications
+  - SMS notifications
+- **Event-Driven**: Automatic notifications for key events
+- **Manual Triggers**: Admin/testing notification endpoint
 
-The database schema supports these features, but API endpoints are not yet implemented:
+#### 🛡️ Admin Module
+- **User Management**:
+  - View all users
+  - Verify user accounts
+  - Ban/unban users
+- **Booking Oversight**: View all bookings in the system
+- **System Statistics**: User counts, booking metrics, active bookings
+- **Protected Access**: AdminGuard ensures only admins can access
 
-#### Jobs & Applications
-- Create, update, delete job postings
-- Nanny application system
-- Application status management (applied, accepted, rejected)
-- Job search and filtering
-
-#### Bookings & Scheduling
-- Create bookings from accepted applications
-- Booking status management (requested, confirmed, cancelled, completed)
-- Start time and end time tracking
-- Booking conflict detection
-
-#### Real-time Messaging
-- Chat creation for active bookings
-- Send and receive messages
-- Message read status tracking
-- File attachments support
-- Real-time updates (WebSocket integration needed)
-
-#### Payments
-- Payment processing integration
-- Transaction ID tracking
-- Payment status management
-- Payment history for users
-- Stripe/Razorpay integration (planned)
-
-#### Reviews & Ratings
-- Post-booking review system
-- Star ratings (1-5)
-- Review comments
-- Bidirectional reviews (parent ↔ nanny)
-- Average rating calculation
-
-#### Email Verification
-- Send verification emails on signup
-- Token-based email verification
-- Resend verification emails
-- Verified user badge
-
-#### Password Reset
-- Request password reset via email
-- Secure token-based reset flow
-- Token expiry management
-- Password strength validation
+#### 🔒 Security & Data Protection
+- **CORS Configuration**: Configurable for development and production
+- **Sensitive Data Exclusion**: Passwords, tokens never exposed in responses
+- **Input Validation**: class-validator for request validation
+- **SQL Injection Protection**: Prisma ORM with parameterized queries
 
 ## 🛠️ Tech Stack
 
@@ -211,28 +146,29 @@ The database schema supports these features, but API endpoints are not yet imple
 - **ORM**: Prisma
 - **Authentication**: JWT, Passport.js, bcrypt
 - **OAuth**: Google OAuth 2.0
+- **Real-Time**: Socket.io
 - **Validation**: class-validator, class-transformer
 - **Maps**: Google Maps Geocoding API
 - **Testing**: Jest (E2E and Unit tests)
 
-## 🧪 Run Tests
+## 📊 Database Schema
 
-```bash
-# unit tests
-$ npm run test
+### Core Tables
+- **users**: Authentication and account data
+- **profiles**: Extended user information
+- **nanny_details**: Nanny professional information
+- **service_requests**: Parent service requests
+- **assignments**: Nanny assignments from auto-matching
+- **bookings**: Confirmed bookings
+- **chats**: Chat rooms linked to bookings
+- **messages**: Chat messages
+- **reviews**: User reviews and ratings
+- **jobs**: Job postings (legacy, optional)
+- **applications**: Job applications (legacy, optional)
 
-# e2e tests
-$ npm run test:e2e
+All tables include UUID primary keys, timestamps, and proper foreign key relationships.
 
-# test coverage
-$ npm run test:cov
-```
-
-```
-
-**📖 For detailed testing instructions, database setup, and seed data information, see [TESTING.md](./Markdown/TESTING.md)**
-
-## 📡 API Endpoints Overview
+## 📡 API Endpoints
 
 ### Authentication
 - `POST /auth/signup` - Register new user
@@ -242,6 +178,7 @@ $ npm run test:cov
 
 ### Users
 - `GET /users/me` - Get current user profile (protected)
+- `GET /users/nannies` - Get all nannies
 - `GET /users/:id` - Get user by ID
 - `PUT /users/:id` - Update user profile
 - `POST /users/upload-image` - Upload profile image
@@ -251,50 +188,103 @@ $ npm run test:cov
 - `GET /location/jobs/nearby` - Find nearby jobs
 - `POST /location/geocode` - Convert address to coordinates
 
+### Service Requests
+- `POST /requests` - Create service request (triggers auto-matching)
+- `GET /requests/parent/me` - Get my service requests
+- `GET /requests/:id` - Get request details
+
+### Assignments
+- `GET /assignments/nanny/me` - Get my assignments
+- `GET /assignments/pending` - Get pending assignments
+- `GET /assignments/:id` - Get assignment details
+- `PUT /assignments/:id/accept` - Accept assignment (creates booking)
+- `PUT /assignments/:id/reject` - Reject assignment
+
+### Bookings
+- `POST /bookings` - Create direct booking
+- `GET /bookings/active` - Get active bookings
+- `GET /bookings/parent/me` - Get my bookings (parent)
+- `GET /bookings/nanny/me` - Get my bookings (nanny)
+- `GET /bookings/:id` - Get booking details
+- `PUT /bookings/:id/start` - Start booking
+- `PUT /bookings/:id/complete` - Complete booking
+- `PUT /bookings/:id/cancel` - Cancel booking
+
+### Chat
+- `POST /chat` - Create chat room
+- `GET /chat/booking/:bookingId` - Get chat by booking
+- `GET /chat/:chatId/messages` - Get message history
+- `POST /chat/:chatId/message` - Send message
+
+### Reviews
+- `POST /reviews` - Create review
+- `GET /reviews/user/:userId` - Get user reviews
+- `GET /reviews/booking/:bookingId` - Get booking review
+
+### Notifications
+- `POST /notifications/send` - Send notification (admin/testing)
+
+### Admin
+- `GET /admin/users` - Get all users (admin only)
+- `GET /admin/bookings` - Get all bookings (admin only)
+- `GET /admin/stats` - Get system statistics (admin only)
+- `PUT /admin/users/:id/verify` - Verify user (admin only)
+- `PUT /admin/users/:id/ban` - Ban user (admin only)
+
 **📖 For complete API documentation, see [API.md](./docs/API.md)**
+
+## 🧪 Testing
+
+```bash
+# Unit tests
+npm run test
+
+# E2E tests
+npm run test:e2e
+
+# Test coverage
+npm run test:cov
+```
+
+**📖 For detailed testing instructions, see [TESTING.md](./Markdown/TESTING.md)**
 
 ## 🌐 CORS Configuration
 
-The backend is configured to accept requests from:
+The backend accepts requests from:
 - **Development**: `http://localhost:3000` (Next.js default)
 - **Production**: Set via `FRONTEND_URL` environment variable
 
-## Deployment
+## 🚧 Future Enhancements
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+- Email verification flow
+- Password reset functionality
+- Payment processing (Stripe/Razorpay)
+- Advanced search filters
+- Notification preferences
+- In-app notifications
+- File upload for profile images
+- Multi-language support
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## 📝 Version History
 
-```bash
-$ npm install -g mau
-$ mau deploy
-```
+### V1.0.0 (November 25, 2025)
+- ✅ Complete authentication system with OAuth
+- ✅ User and profile management
+- ✅ Location-based services
+- ✅ Service request auto-matching system
+- ✅ Assignment management for nannies
+- ✅ Comprehensive booking system
+- ✅ Real-time chat with Socket.io
+- ✅ Reviews and ratings
+- ✅ Notification system
+- ✅ Admin module
+- ✅ Full API documentation
+- ✅ E2E and unit tests
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## 📄 License
 
-## Resources
+This project is proprietary software. All rights reserved.
 
-Check out a few resources that may come in handy when working with NestJS:
+---
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+**Built with ❤️ using NestJS**
