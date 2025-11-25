@@ -19,10 +19,7 @@ export class UsersController {
   @UseGuards(AuthGuard("jwt"))
   @Get("me")
   async getProfile(@Request() req) {
-    const user = await this.usersService.findOne(req.user.id);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password_hash, ...result } = user;
-    return result;
+    return this.usersService.findMe(req.user.id);
   }
 
   @Get("nannies")

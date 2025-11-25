@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, Logger } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { Prisma } from "@prisma/client";
-import { users } from "@prisma/client";
+import { users, profiles } from "@prisma/client";
 import { UpdateUserDto } from "./dto/update-user.dto";
 
 @Injectable()
@@ -11,9 +11,12 @@ export class UsersService {
   constructor(private prisma: PrismaService) { }
 
   // Auth-related methods
-  async create(data: Prisma.usersCreateInput): Promise<users> {
+  async create(data: Prisma.usersCreateInput): Promise<users & { profiles: profiles | null }> {
     return this.prisma.users.create({
       data,
+      include: {
+        profiles: true,
+      },
     });
   }
 
@@ -23,15 +26,51 @@ export class UsersService {
     });
   }
 
+  async findUserForAuth(email: string): Promise<Pick<users, 'id' | 'email' | 'password_hash' | 'role' | 'is_verified' | 'oauth_provider'> & { profiles: { first_name: string | null; last_name: string | null; profile_image_url: string | null } | null } | null> {
+    return this.prisma.users.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        password_hash: true,
+        role: true,
+        is_verified: true,
+        oauth_provider: true,
+        profiles: {
+          select: {
+            first_name: true,
+            last_name: true,
+            profile_image_url: true,
+          },
+        },
+      },
+    });
+  }
+
   async findByOAuth(
     provider: string,
     providerId: string,
-  ): Promise<users | null> {
+  ): Promise<Pick<users, 'id' | 'email' | 'password_hash' | 'role' | 'is_verified' | 'oauth_provider'> & { profiles: { first_name: string | null; last_name: string | null; profile_image_url: string | null } | null } | null> {
     return this.prisma.users.findUnique({
       where: {
         oauth_provider_oauth_provider_id: {
           oauth_provider: provider,
           oauth_provider_id: providerId,
+        },
+      },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        password_hash: true,
+        is_verified: true,
+        oauth_provider: true,
+        profiles: {
+          select: {
+            first_name: true,
+            last_name: true,
+            profile_image_url: true,
+          },
         },
       },
     });
@@ -75,6 +114,35 @@ export class UsersService {
         ...nanny
       }) => nanny,
     );
+  }
+
+  async findMe(id: string) {
+    const user = await this.prisma.users.findUnique({
+      where: { id },
+      include: {
+        profiles: true,
+        nanny_details: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    // Exclude sensitive fields
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const {
+      password_hash,
+      oauth_access_token,
+      oauth_refresh_token,
+      verification_token,
+      reset_password_token,
+      verification_token_expires,
+      reset_password_token_expires,
+      ...result
+    } = user;
+
+    return result;
   }
 
   async findOne(id: string) {
@@ -222,6 +290,9 @@ export class UsersService {
       return this.prisma.users.update({
         where: { id },
         data: updateUserDto as Prisma.usersUpdateInput,
+        include: {
+          profiles: true,
+        },
       });
     }
   }

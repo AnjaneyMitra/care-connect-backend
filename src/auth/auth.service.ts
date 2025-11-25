@@ -11,7 +11,7 @@ export class AuthService {
   ) {}
 
   async validateUser(email: string, pass: string): Promise<any> {
-    const user = await this.usersService.findOneByEmail(email);
+    const user = await this.usersService.findUserForAuth(email);
     if (
       user &&
       user.password_hash &&
@@ -32,6 +32,9 @@ export class AuthService {
         id: user.id,
         email: user.email,
         role: user.role,
+        is_verified: user.is_verified,
+        oauth_provider: user.oauth_provider,
+        profiles: user.profiles && (Array.isArray(user.profiles) ? user.profiles[0] : user.profiles),
       },
     };
   }
@@ -63,7 +66,7 @@ export class AuthService {
 
     if (!user) {
       // Check if user exists by email
-      user = await this.usersService.findOneByEmail(googleUser.email);
+      user = await this.usersService.findUserForAuth(googleUser.email);
 
       if (user) {
         // Link account
