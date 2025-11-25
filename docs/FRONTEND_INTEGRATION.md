@@ -182,10 +182,12 @@ if (success) {
 ```
 
 #### Booking a Nanny
-Once a nanny is selected (and in the future, accepted the request), a booking is created.
 
+There are two ways to create a booking:
+
+**Option 1: Direct Booking** (Parent directly books a specific nanny)
 ```typescript
-// POST /bookings (Temporary manual creation)
+// POST /bookings
 const response = await fetch('http://localhost:4000/bookings', {
   method: 'POST',
   headers: {
@@ -193,12 +195,55 @@ const response = await fetch('http://localhost:4000/bookings', {
     'Content-Type': 'application/json'
   },
   body: JSON.stringify({
-    jobId: 'job-uuid',
-    nannyId: 'nanny-uuid'
+    nannyId: 'nanny-uuid',
+    date: '2025-12-01',
+    startTime: '14:00:00',
+    endTime: '18:00:00'
   })
 });
 const booking = await response.json();
-console.log('Booking created:', booking.id);
+console.log('Direct booking created:', booking.id);
+```
+
+**Option 2: Auto-Matching Flow** (System finds and assigns a nanny)
+1. Parent creates a service request (see "Creating a Service Request" above)
+2. System automatically finds and assigns a nanny
+3. Nanny receives assignment notification
+4. Nanny accepts assignment via `PUT /assignments/:id/accept`
+5. Booking is automatically created upon acceptance
+
+```typescript
+// Nanny accepts assignment
+const response = await fetch(`http://localhost:4000/assignments/${assignmentId}/accept`, {
+  method: 'PUT',
+  headers: {
+    'Authorization': `Bearer ${nannyToken}`
+  }
+});
+const { assignment, booking } = await response.json();
+console.log('Assignment accepted, booking created:', booking.id);
+```
+
+#### Getting Bookings
+
+```typescript
+// Get all bookings for current parent
+const response = await fetch('http://localhost:4000/bookings/parent/me', {
+  headers: { 'Authorization': `Bearer ${token}` }
+});
+const myBookings = await response.json();
+
+// Get all bookings for current nanny
+const response = await fetch('http://localhost:4000/bookings/nanny/me', {
+  headers: { 'Authorization': `Bearer ${token}` }
+});
+const myBookings = await response.json();
+
+// Get active bookings only
+const response = await fetch('http://localhost:4000/bookings/active', {
+  headers: { 'Authorization': `Bearer ${token}` }
+});
+const activeBookings = await response.json();
 ```
 
 #### Real-Time Chat

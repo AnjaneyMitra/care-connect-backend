@@ -492,19 +492,235 @@ Reject an assignment. This triggers the system to find the next available nanny.
   ```
 - **Response**: `{ "success": true }`
 
+#### GET /assignments/:id
+Get details of a specific assignment.
+
+- **Authentication**: Required (JWT)
+- **Path Parameters**:
+  - `id` (string): Assignment UUID
+- **Response**: Assignment object with request details
+
 ### Bookings
 
-#### GET /bookings/:id
-Get booking details.
+#### POST /bookings
+Create a new booking manually (supports both direct booking and job-based booking).
 
-- **Authentication**: Required
-- **Response**: Booking object with parent and nanny details.
+- **Authentication**: Required (JWT)
+- **Request Body**:
+  ```json
+  {
+    "jobId": "uuid",  // Optional - for job-based bookings
+    "nannyId": "uuid",  // Required
+    "date": "2025-12-01",  // Optional - for direct bookings
+    "startTime": "14:00:00",  // Optional - for direct bookings
+    "endTime": "18:00:00"  // Optional - for direct bookings
+  }
+  ```
+- **Response**: `Booking` object
+  ```json
+  {
+    "id": "uuid",
+    "job_id": "uuid",
+    "parent_id": "uuid",
+    "nanny_id": "uuid",
+    "status": "CONFIRMED",
+    "start_time": "ISO 8601 timestamp",
+    "created_at": "ISO 8601 timestamp",
+    "updated_at": "ISO 8601 timestamp"
+  }
+  ```
 
 #### GET /bookings/active
-Get currently active/confirmed bookings.
+Get all active bookings (CONFIRMED or IN_PROGRESS) for the current user.
 
-- **Authentication**: Required
-- **Response**: Array of bookings.
+- **Authentication**: Required (JWT)
+- **Response**: Array of `Booking` objects with job and profile details
+
+#### GET /bookings/parent/me
+Get all bookings for the current parent user.
+
+- **Authentication**: Required (JWT - Parent role)
+- **Response**: Array of `Booking` objects
+
+#### GET /bookings/nanny/me
+Get all bookings for the current nanny user.
+
+- **Authentication**: Required (JWT - Nanny role)
+- **Response**: Array of `Booking` objects
+
+#### GET /bookings/:id
+Get details of a specific booking.
+
+- **Authentication**: Required (JWT - User must be part of booking)
+- **Path Parameters**:
+  - `id` (string): Booking UUID
+- **Response**: `Booking` object with full details
+
+#### PUT /bookings/:id/start
+Mark a booking as IN_PROGRESS.
+
+- **Authentication**: Required (JWT - Nanny only)
+- **Response**: Updated `Booking` object
+
+#### PUT /bookings/:id/complete
+Mark a booking as COMPLETED.
+
+- **Authentication**: Required (JWT - Nanny or Parent)
+- **Response**: Updated `Booking` object
+
+#### PUT /bookings/:id/cancel
+Cancel a booking.
+
+- **Authentication**: Required (JWT - Nanny or Parent)
+- **Request Body**:
+  ```json
+  {
+    "reason": "string"
+  }
+  ```
+- **Response**: Updated `Booking` object
+
+### Messaging (Chat)
+
+#### POST /chat
+Create a new chat room for a booking.
+
+- **Authentication**: Required (JWT)
+- **Request Body**:
+  ```json
+  {
+    "bookingId": "uuid"
+  }
+  ```
+- **Response**: `Chat` object
+
+#### GET /chat/booking/:bookingId
+Get the chat room associated with a booking.
+
+- **Authentication**: Required (JWT)
+- **Path Parameters**:
+  - `bookingId` (string): Booking UUID
+- **Response**: `Chat` object with latest messages
+
+#### GET /chat/:chatId/messages
+Get message history for a chat room with pagination.
+
+- **Authentication**: Required (JWT)
+- **Path Parameters**:
+  - `chatId` (string): Chat UUID
+- **Query Parameters**:
+  - `page` (number, default: 1)
+  - `limit` (number, default: 50)
+- **Response**: Array of `Message` objects
+
+#### POST /chat/:chatId/message
+Send a message via HTTP (Alternative to WebSocket).
+
+- **Authentication**: Required (JWT)
+- **Path Parameters**:
+  - `chatId` (string): Chat UUID
+- **Request Body**:
+  ```json
+  {
+    "content": "string",
+    "attachmentUrl": "string"  // Optional
+  }
+  ```
+- **Response**: Created `Message` object
+
+### Reviews
+
+#### POST /reviews
+Create a review for a completed booking.
+
+- **Authentication**: Required (JWT)
+- **Request Body**:
+  ```json
+  {
+    "bookingId": "uuid",
+    "rating": 5,  // 1-5
+    "comment": "string"
+  }
+  ```
+- **Response**: `Review` object
+
+#### GET /reviews/user/:userId
+Get all reviews received by a specific user (parent or nanny).
+
+- **Authentication**: Not required
+- **Path Parameters**:
+  - `userId` (string): User UUID
+- **Response**: Array of `Review` objects with reviewer details
+
+#### GET /reviews/booking/:bookingId
+Get the review associated with a specific booking.
+
+- **Authentication**: Not required
+- **Path Parameters**:
+  - `bookingId` (string): Booking UUID
+- **Response**: Array of `Review` objects (usually one)
+
+### Notifications
+
+#### POST /notifications/send
+Manually trigger a notification (for testing/admin purposes).
+
+- **Authentication**: Required (JWT)
+- **Request Body**:
+  ```json
+  {
+    "type": "email" | "push" | "sms",
+    "to": "string",  // email address, user_id, or phone number
+    "subject": "string",  // Optional (for email/push)
+    "content": "string"
+  }
+  ```
+- **Response**: Success status
+
+### Admin
+
+All admin endpoints require JWT authentication AND admin role (enforced by AdminGuard).
+
+#### GET /admin/users
+Get all users in the system.
+
+- **Authentication**: Required (JWT - Admin only)
+- **Response**: Array of `User` objects with basic info
+
+#### GET /admin/bookings
+Get all bookings in the system.
+
+- **Authentication**: Required (JWT - Admin only)
+- **Response**: Array of `Booking` objects with job and user details
+
+#### GET /admin/stats
+Get system statistics.
+
+- **Authentication**: Required (JWT - Admin only)
+- **Response**:
+  ```json
+  {
+    "totalUsers": 150,
+    "totalBookings": 89,
+    "activeBookings": 12
+  }
+  ```
+
+#### PUT /admin/users/:id/verify
+Verify a user account.
+
+- **Authentication**: Required (JWT - Admin only)
+- **Path Parameters**:
+  - `id` (string): User UUID
+- **Response**: Updated `User` object
+
+#### PUT /admin/users/:id/ban
+Ban a user account.
+
+- **Authentication**: Required (JWT - Admin only)
+- **Path Parameters**:
+  - `id` (string): User UUID
+- **Response**: Updated `User` object
 
 ## Error Responses
 
@@ -582,214 +798,11 @@ The following features are planned but not yet available via API:
 - `POST /auth/forgot-password` - Request password reset
 - `POST /auth/reset-password` - Reset password with token
 
-### Applications
+### Job Applications
 - `POST /applications` - Apply to a job
 - `GET /applications/nanny/:nannyId` - Get nanny's applications
 - `GET /applications/job/:jobId` - Get job's applications
 - `PUT /applications/:id` - Update application status
-
-### Bookings
-
-#### POST /bookings
-Create a new booking manually (Temporary endpoint for testing).
-
-- **Authentication**: Required (JWT)
-- **Request Body**:
-  ```json
-  {
-    "jobId": "uuid",
-    "nannyId": "uuid"
-  }
-  ```
-- **Response**: `Booking` object
-  ```json
-  {
-    "id": "uuid",
-    "job_id": "uuid",
-    "parent_id": "uuid",
-    "nanny_id": "uuid",
-    "status": "CONFIRMED",
-    "start_time": "ISO 8601 timestamp",
-    "created_at": "ISO 8601 timestamp",
-    "updated_at": "ISO 8601 timestamp"
-  }
-  ```
-
-#### GET /bookings/active
-Get all active bookings (CONFIRMED or IN_PROGRESS) for the current user.
-
-- **Authentication**: Required (JWT)
-- **Response**: Array of `Booking` objects with job and profile details.
-
-#### GET /bookings/parent/me
-Get all bookings for the current parent user.
-
-- **Authentication**: Required (JWT - Parent role)
-- **Response**: Array of `Booking` objects.
-
-#### GET /bookings/nanny/me
-Get all bookings for the current nanny user.
-
-- **Authentication**: Required (JWT - Nanny role)
-- **Response**: Array of `Booking` objects.
-
-#### GET /bookings/:id
-Get details of a specific booking.
-
-- **Authentication**: Required (JWT - User must be part of booking)
-- **Response**: `Booking` object with full details.
-
-#### PUT /bookings/:id/start
-Mark a booking as IN_PROGRESS.
-
-- **Authentication**: Required (JWT - Nanny only)
-- **Response**: Updated `Booking` object.
-
-#### PUT /bookings/:id/complete
-Mark a booking as COMPLETED.
-
-- **Authentication**: Required (JWT - Nanny or Parent)
-- **Response**: Updated `Booking` object.
-
-#### PUT /bookings/:id/cancel
-Cancel a booking.
-
-- **Authentication**: Required (JWT - Nanny or Parent)
-- **Request Body**:
-  ```json
-  {
-    "reason": "string"
-  }
-  ```
-- **Response**: Updated `Booking` object.
-
-### Messaging (Chat)
-
-#### POST /chat
-Create a new chat room manually.
-
-- **Authentication**: Required (JWT)
-- **Request Body**:
-  ```json
-  {
-    "bookingId": "uuid"
-  }
-  ```
-- **Response**: `Chat` object.
-
-#### GET /chat/booking/:bookingId
-Get the chat room associated with a booking.
-
-- **Authentication**: Required (JWT)
-- **Response**: `Chat` object with latest messages.
-
-#### GET /chat/:chatId/messages
-Get message history for a chat room with pagination.
-
-- **Authentication**: Required (JWT)
-- **Query Parameters**:
-  - `page` (number, default: 1)
-  - `limit` (number, default: 50)
-- **Response**: Array of `Message` objects.
-
-#### POST /chat/:chatId/message
-Send a message via HTTP (Alternative to WebSocket).
-
-- **Authentication**: Required (JWT)
-- **Request Body**:
-  ```json
-  {
-    "content": "string",
-    "attachmentUrl": "string" // Optional
-  }
-  ```
-- **Response**: Created `Message` object.
-
-### Reviews
-
-#### POST /reviews
-Create a review for a completed booking.
-
-- **Authentication**: Required (JWT)
-- **Request Body**:
-  ```json
-  {
-    "bookingId": "uuid",
-    "rating": number, // 1-5
-    "comment": "string"
-  }
-  ```
-- **Response**: `Review` object.
-
-#### GET /reviews/user/:userId
-Get all reviews received by a specific user (parent or nanny).
-
-- **Authentication**: Not required
-- **Response**: Array of `Review` objects with reviewer details.
-
-#### GET /reviews/booking/:bookingId
-Get the review associated with a specific booking.
-
-- **Authentication**: Not required
-- **Response**: Array of `Review` objects (usually one).
-
-### Notifications
-
-#### POST /notifications/send
-Manually trigger a notification (for testing/admin).
-
-- **Authentication**: Required (JWT)
-- **Request Body**:
-  ```json
-  {
-    "type": "email" | "push" | "sms",
-    "to": "string", // email or user_id or phone
-    "subject": "string", // Optional (for email/push)
-    "content": "string"
-  }
-  ```
-- **Response**: Success status.
-
-### Admin
-
-All admin endpoints require JWT authentication AND admin role.
-
-#### GET /admin/users
-Get all users in the system.
-
-- **Authentication**: Required (JWT - Admin only)
-- **Response**: Array of `User` objects with basic info.
-
-#### GET /admin/bookings
-Get all bookings in the system.
-
-- **Authentication**: Required (JWT - Admin only)
-- **Response**: Array of `Booking` objects with job and user details.
-
-#### GET /admin/stats
-Get system statistics.
-
-- **Authentication**: Required (JWT - Admin only)
-- **Response**:
-  ```json
-  {
-    "totalUsers": number,
-    "totalBookings": number,
-    "activeBookings": number
-  }
-  ```
-
-#### PUT /admin/users/:id/verify
-Verify a user account.
-
-- **Authentication**: Required (JWT - Admin only)
-- **Response**: Updated `User` object.
-
-#### PUT /admin/users/:id/ban
-Ban a user account.
-
-- **Authentication**: Required (JWT - Admin only)
-- **Response**: Updated `User` object.
 
 ### Payments
 - `POST /payments` - Process payment
@@ -798,6 +811,6 @@ Ban a user account.
 
 ---
 
-**Last Updated**: November 20, 2025  
+**Last Updated**: November 25, 2025  
 **API Version**: 1.0.0  
 **Backend Port**: 4000
