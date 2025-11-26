@@ -14,7 +14,7 @@ import { ReviewsModule } from './reviews/reviews.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: 'prisma.env',
+      envFilePath: '.env',
     }),
     AuthModule,
     UsersModule,

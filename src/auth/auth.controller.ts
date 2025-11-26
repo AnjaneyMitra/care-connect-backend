@@ -30,9 +30,20 @@ export class AuthController {
     @Get('google/callback')
     @UseGuards(AuthGuard('google'))
     async googleAuthRedirect(@Req() req, @Res() res: Response) {
+        console.log('Google callback hit');
         const result = await this.authService.googleLogin(req.user);
-        // Redirect to frontend or return token
-        // For now, just return JSON
-        res.json(result);
+        console.log('Login result:', { ...result, access_token: 'HIDDEN' });
+
+        // Get frontend URL from environment or use default
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+
+        // Determine redirect path based on user role
+        const redirectPath = result.user.role === 'parent' ? '/browse' : '/dashboard';
+
+        // Redirect to frontend with token and user data
+        const redirectUrl = `${frontendUrl}${redirectPath}?token=${result.access_token}&user=${encodeURIComponent(JSON.stringify(result.user))}`;
+
+        console.log('Redirecting to:', redirectUrl);
+        res.redirect(redirectUrl);
     }
 }
