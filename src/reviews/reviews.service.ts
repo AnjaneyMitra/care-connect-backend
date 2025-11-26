@@ -90,17 +90,30 @@ export class ReviewsService {
         }
 
         // 4. Update review
-        const { bookingId, ...updateData } = updateReviewDto;
+        const { bookingId, ratingPunctuality, ratingProfessionalism, ratingCareQuality, ratingCommunication, ...updateData } = updateReviewDto;
+
+        const dataToUpdate: any = {
+            ...updateData,
+            updated_at: new Date(),
+        };
+
+        // Only update rating categories if they are provided
+        if (ratingPunctuality !== undefined) {
+            dataToUpdate.rating_punctuality = ratingPunctuality;
+        }
+        if (ratingProfessionalism !== undefined) {
+            dataToUpdate.rating_professionalism = ratingProfessionalism;
+        }
+        if (ratingCareQuality !== undefined) {
+            dataToUpdate.rating_care_quality = ratingCareQuality;
+        }
+        if (ratingCommunication !== undefined) {
+            dataToUpdate.rating_communication = ratingCommunication;
+        }
+
         return this.prisma.reviews.update({
             where: { id: reviewId },
-            data: {
-                ...updateData,
-                rating_punctuality: updateReviewDto.ratingPunctuality,
-                rating_professionalism: updateReviewDto.ratingProfessionalism,
-                rating_care_quality: updateReviewDto.ratingCareQuality,
-                rating_communication: updateReviewDto.ratingCommunication,
-                updated_at: new Date(),
-            },
+            data: dataToUpdate,
         });
     }
 
