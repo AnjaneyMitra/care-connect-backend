@@ -101,19 +101,40 @@ export class UsersService {
       },
     });
 
-    // Exclude sensitive fields
-    return nannies.map(
-      ({
-        password_hash,
-        oauth_access_token,
-        oauth_refresh_token,
-        verification_token,
-        reset_password_token,
-        verification_token_expires,
-        reset_password_token_expires,
-        ...nanny
-      }) => nanny,
+    // Calculate average rating for each nanny
+    const nanniesWithRatings = await Promise.all(
+      nannies.map(async (nanny) => {
+        const reviews = await this.prisma.reviews.findMany({
+          where: { reviewee_id: nanny.id },
+          select: { rating: true },
+        });
+
+        const totalReviews = reviews.length;
+        const averageRating = totalReviews > 0
+          ? Math.round((reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / totalReviews) * 10) / 10
+          : null;
+
+        // Exclude sensitive fields
+        const {
+          password_hash,
+          oauth_access_token,
+          oauth_refresh_token,
+          verification_token,
+          reset_password_token,
+          verification_token_expires,
+          reset_password_token_expires,
+          ...nannyData
+        } = nanny;
+
+        return {
+          ...nannyData,
+          averageRating,
+          totalReviews,
+        };
+      })
     );
+
+    return nanniesWithRatings;
   }
 
   async findMe(id: string) {
@@ -156,6 +177,25 @@ export class UsersService {
 
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    // If user is a nanny, include average rating
+    if (user.role === "nanny") {
+      const reviews = await this.prisma.reviews.findMany({
+        where: { reviewee_id: id },
+        select: { rating: true },
+      });
+
+      const totalReviews = reviews.length;
+      const averageRating = totalReviews > 0
+        ? Math.round((reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / totalReviews) * 10) / 10
+        : null;
+
+      return {
+        ...user,
+        averageRating,
+        totalReviews,
+      };
     }
 
     return user;

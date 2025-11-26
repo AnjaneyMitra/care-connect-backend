@@ -2,6 +2,8 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
+  Delete,
   Body,
   Param,
   UseGuards,
@@ -9,23 +11,36 @@ import {
 } from "@nestjs/common";
 import { ReviewsService } from "./reviews.service";
 import { AuthGuard } from "@nestjs/passport";
+import { CreateReviewDto } from "./dto/create-review.dto";
+import { UpdateReviewDto } from "./dto/update-review.dto";
 
 @Controller("reviews")
 export class ReviewsController {
-  constructor(private readonly reviewsService: ReviewsService) {}
+  constructor(private readonly reviewsService: ReviewsService) { }
 
   @Post()
   @UseGuards(AuthGuard("jwt"))
   async createReview(
-    @Body() body: { bookingId: string; rating: number; comment: string },
+    @Body() createReviewDto: CreateReviewDto,
     @Request() req,
   ) {
-    return this.reviewsService.createReview(
-      body.bookingId,
-      req.user.id,
-      body.rating,
-      body.comment,
-    );
+    return this.reviewsService.createReview(createReviewDto, req.user.id);
+  }
+
+  @Patch(":id")
+  @UseGuards(AuthGuard("jwt"))
+  async updateReview(
+    @Param("id") id: string,
+    @Body() updateReviewDto: UpdateReviewDto,
+    @Request() req,
+  ) {
+    return this.reviewsService.updateReview(id, updateReviewDto, req.user.id);
+  }
+
+  @Delete(":id")
+  @UseGuards(AuthGuard("jwt"))
+  async deleteReview(@Param("id") id: string, @Request() req) {
+    return this.reviewsService.deleteReview(id, req.user.id);
   }
 
   @Get("user/:userId")
@@ -33,8 +48,24 @@ export class ReviewsController {
     return this.reviewsService.getReviewsForUser(userId);
   }
 
+  @Get("nanny/:nannyId")
+  async getNannyReviews(@Param("nannyId") nannyId: string) {
+    return this.reviewsService.getReviewsForNanny(nannyId);
+  }
+
+  @Get("parent/:parentId")
+  async getParentReviews(@Param("parentId") parentId: string) {
+    return this.reviewsService.getReviewsForParent(parentId);
+  }
+
   @Get("booking/:bookingId")
   async getBookingReviews(@Param("bookingId") bookingId: string) {
     return this.reviewsService.getReviewForBooking(bookingId);
+  }
+
+  @Get("booking/:bookingId/can-review")
+  @UseGuards(AuthGuard("jwt"))
+  async canReviewBooking(@Param("bookingId") bookingId: string, @Request() req) {
+    return this.reviewsService.canUserReviewBooking(bookingId, req.user.id);
   }
 }

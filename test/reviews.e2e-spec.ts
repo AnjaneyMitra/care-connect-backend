@@ -14,6 +14,8 @@ describe("ReviewsController (e2e)", () => {
     let parentToken: string;
     let parentId: string;
     let completedBookingId: string;
+    let parentReviewId: string;
+    let nannyReviewId: string;
 
     beforeAll(async () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -99,13 +101,13 @@ describe("ReviewsController (e2e)", () => {
     });
 
     describe("/reviews (POST)", () => {
-        it("should create a review from parent for nanny", () => {
+        it("should create a review from parent for nanny", async () => {
             if (!completedBookingId) {
                 console.warn("No completed booking, skipping test");
                 return;
             }
 
-            return request(app.getHttpServer())
+            const response = await request(app.getHttpServer())
                 .post("/reviews")
                 .set("Authorization", `Bearer ${parentToken}`)
                 .send({
@@ -113,21 +115,21 @@ describe("ReviewsController (e2e)", () => {
                     rating: 5,
                     comment: "Excellent nanny! Very professional and caring.",
                 })
-                .expect(201)
-                .expect((res) => {
-                    expect(res.body.rating).toBe(5);
-                    expect(res.body.reviewer_id).toBe(parentId);
-                    expect(res.body.reviewee_id).toBe(nannyId);
-                });
+                .expect(201);
+
+            expect(response.body.rating).toBe(5);
+            expect(response.body.reviewer_id).toBe(parentId);
+            expect(response.body.reviewee_id).toBe(nannyId);
+            parentReviewId = response.body.id;
         });
 
-        it("should create a review from nanny for parent", () => {
+        it("should create a review from nanny for parent", async () => {
             if (!completedBookingId) {
                 console.warn("No completed booking, skipping test");
                 return;
             }
 
-            return request(app.getHttpServer())
+            const response = await request(app.getHttpServer())
                 .post("/reviews")
                 .set("Authorization", `Bearer ${nannyToken}`)
                 .send({
@@ -135,12 +137,12 @@ describe("ReviewsController (e2e)", () => {
                     rating: 4,
                     comment: "Great family to work with!",
                 })
-                .expect(201)
-                .expect((res) => {
-                    expect(res.body.rating).toBe(4);
-                    expect(res.body.reviewer_id).toBe(nannyId);
-                    expect(res.body.reviewee_id).toBe(parentId);
-                });
+                .expect(201);
+
+            expect(response.body.rating).toBe(4);
+            expect(response.body.reviewer_id).toBe(nannyId);
+            expect(response.body.reviewee_id).toBe(parentId);
+            nannyReviewId = response.body.id;
         });
 
         it("should fail to review incomplete booking", async () => {
@@ -190,6 +192,85 @@ describe("ReviewsController (e2e)", () => {
         });
     });
 
+    describe("/reviews/:id (PATCH)", () => {
+        it("should update own review", () => {
+            if (!parentReviewId) {
+                console.warn("No review to update, skipping test");
+                return;
+            }
+
+            return request(app.getHttpServer())
+                .patch(`/reviews/${parentReviewId}`)
+                .set("Authorization", `Bearer ${parentToken}`)
+                .send({
+                    rating: 4,
+                    comment: "Updated: Very good nanny!",
+                })
+                .expect(200)
+                .expect((res) => {
+                    expect(res.body.rating).toBe(4);
+                    expect(res.body.comment).toBe("Updated: Very good nanny!");
+                });
+        });
+
+        it("should fail to update someone else's review", () => {
+            if (!parentReviewId) {
+                console.warn("No review to update, skipping test");
+                return;
+            }
+
+            return request(app.getHttpServer())
+                .patch(`/reviews/${parentReviewId}`)
+                .set("Authorization", `Bearer ${nannyToken}`)
+                .send({
+                    rating: 1,
+                })
+                .expect(403);
+        });
+    });
+
+    describe("/reviews/nanny/:nannyId (GET)", () => {
+        it("should get all reviews for a nanny", () => {
+            return request(app.getHttpServer())
+                .get(`/reviews/nanny/${nannyId}`)
+                .expect(200)
+                .expect((res) => {
+                    expect(Array.isArray(res.body)).toBe(true);
+                    expect(res.body.length).toBeGreaterThanOrEqual(1);
+                });
+        });
+    });
+
+    describe("/reviews/parent/:parentId (GET)", () => {
+        it("should get all reviews for a parent", () => {
+            return request(app.getHttpServer())
+                .get(`/reviews/parent/${parentId}`)
+                .expect(200)
+                .expect((res) => {
+                    expect(Array.isArray(res.body)).toBe(true);
+                });
+        });
+    });
+
+    describe("/reviews/booking/:bookingId/can-review (GET)", () => {
+        it("should check if user can review a booking", () => {
+            if (!completedBookingId) {
+                console.warn("No completed booking, skipping test");
+                return;
+            }
+
+            return request(app.getHttpServer())
+                .get(`/reviews/booking/${completedBookingId}/can-review`)
+                .set("Authorization", `Bearer ${parentToken}`)
+                .expect(200)
+                .expect((res) => {
+                    expect(res.body).toHaveProperty("canReview");
+                    expect(res.body.canReview).toBe(false); // Already reviewed
+                    expect(res.body.reason).toContain("already reviewed");
+                });
+        });
+    });
+
     describe("/reviews/user/:userId (GET)", () => {
         it("should get reviews for a user (nanny)", () => {
             return request(app.getHttpServer())
@@ -215,6 +296,35 @@ describe("ReviewsController (e2e)", () => {
                     expect(Array.isArray(res.body)).toBe(true);
                     expect(res.body.length).toBeGreaterThanOrEqual(1);
                 });
+        });
+    });
+
+    describe("/reviews/:id (DELETE)", () => {
+        it("should delete own review", () => {
+            if (!nannyReviewId) {
+                console.warn("No review to delete, skipping test");
+                return;
+            }
+
+            return request(app.getHttpServer())
+                .delete(`/reviews/${nannyReviewId}`)
+                .set("Authorization", `Bearer ${nannyToken}`)
+                .expect(200)
+                .expect((res) => {
+                    expect(res.body.message).toContain("deleted successfully");
+                });
+        });
+
+        it("should fail to delete someone else's review", () => {
+            if (!parentReviewId) {
+                console.warn("No review to delete, skipping test");
+                return;
+            }
+
+            return request(app.getHttpServer())
+                .delete(`/reviews/${parentReviewId}`)
+                .set("Authorization", `Bearer ${nannyToken}`)
+                .expect(403);
         });
     });
 });
