@@ -3,7 +3,7 @@ import { PrismaService } from "../prisma/prisma.service";
 
 @Injectable()
 export class AdminService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async getAllUsers() {
     return this.prisma.users.findMany({
@@ -29,11 +29,28 @@ export class AdminService {
       orderBy: { created_at: "desc" },
       include: {
         jobs: true,
+        service_requests: true,
         users_bookings_parent_idTousers: {
-          select: { email: true },
+          select: {
+            email: true,
+            profiles: {
+              select: {
+                first_name: true,
+                last_name: true,
+              },
+            },
+          },
         },
         users_bookings_nanny_idTousers: {
-          select: { email: true },
+          select: {
+            email: true,
+            profiles: {
+              select: {
+                first_name: true,
+                last_name: true,
+              },
+            },
+          },
         },
       },
     });
