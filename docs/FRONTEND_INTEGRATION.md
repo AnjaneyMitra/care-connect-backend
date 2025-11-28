@@ -318,3 +318,224 @@ See [Testing Guide](../Markdown/TESTING.md) for full list of test users.
 - **Maps**: You'll need your own Google Maps API key for the frontend (Map display, Autocomplete). The backend handles Geocoding.
 - **CORS**: The backend is configured to accept requests from `http://localhost:3000` by default. For production, set the `FRONTEND_URL` environment variable.
 - **Security**: Sensitive fields (password_hash, oauth tokens, verification tokens) are automatically excluded from API responses.
+
+## 📝 Reviews & Ratings Integration
+
+The backend provides a comprehensive reviews system that allows parents and nannies to rate each other after completing a booking.
+
+### Displaying Nanny Ratings
+
+Nanny ratings are automatically included when fetching nanny profiles:
+
+```typescript
+// GET /users/nannies - Fetch all nannies with ratings
+const response = await fetch('http://localhost:4000/users/nannies');
+const nannies = await response.json();
+
+nannies.forEach(nanny => {
+  const rating = nanny.averageRating || 'No reviews yet';
+  const count = nanny.totalReviews;
+  console.log(`${nanny.profiles.first_name}: ⭐ ${rating}/5 (${count} reviews)`);
+});
+```
+
+```typescript
+// GET /users/:id - Fetch specific nanny with rating
+const response = await fetch(`http://localhost:4000/users/${nannyId}`);
+const nanny = await response.json();
+
+if (nanny.role === 'nanny' && nanny.averageRating) {
+  console.log(`Average Rating: ${nanny.averageRating}/5`);
+  console.log(`Total Reviews: ${nanny.totalReviews}`);
+}
+```
+
+### Checking Review Eligibility
+
+Before showing a review form, check if the user can review the booking:
+
+```typescript
+// GET /reviews/booking/:bookingId/can-review
+const token = localStorage.getItem('token');
+const response = await fetch(
+  `http://localhost:4000/reviews/booking/${bookingId}/can-review`,
+  {
+    headers: { 'Authorization': `Bearer ${token}` }
+  }
+);
+const { canReview, reason, existingReview } = await response.json();
+
+if (canReview) {
+  // Show review form
+  showReviewForm();
+} else {
+  // Display reason (e.g., "You have already reviewed this booking")
+  console.log('Cannot review:', reason);
+  if (existingReview) {
+    // Show existing review with edit option
+    displayExistingReview(existingReview);
+  }
+}
+```
+
+### Creating a Review
+
+After a booking is completed, allow users to leave a review:
+
+```typescript
+// POST /reviews
+const token = localStorage.getItem('token');
+const reviewData = {
+  bookingId: bookingId,
+  rating: 5,  // 1-5 stars
+  comment: "Excellent caregiver! Very professional and caring with the kids."
+};
+
+const response = await fetch('http://localhost:4000/reviews', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  },
+  body: JSON.stringify(reviewData)
+});
+
+if (response.ok) {
+  const review = await response.json();
+  console.log('Review created:', review.id);
+} else {
+  const error = await response.json();
+  console.error('Error:', error.message);
+}
+```
+
+### Updating a Review
+
+Users can update their own reviews:
+
+```typescript
+// PATCH /reviews/:id
+const token = localStorage.getItem('token');
+const updateData = {
+  rating: 4,  // Changed rating
+  comment: "Updated: Very good service overall."
+};
+
+const response = await fetch(`http://localhost:4000/reviews/${reviewId}`, {
+  method: 'PATCH',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  },
+  body: JSON.stringify(updateData)
+});
+
+const updatedReview = await response.json();
+```
+
+### Deleting a Review
+
+Users can delete their own reviews:
+
+```typescript
+// DELETE /reviews/:id
+const token = localStorage.getItem('token');
+const response = await fetch(`http://localhost:4000/reviews/${reviewId}`, {
+  method: 'DELETE',
+  headers: { 'Authorization': `Bearer ${token}` }
+});
+
+const result = await response.json();
+console.log(result.message); // "Review deleted successfully"
+```
+
+### Displaying Reviews
+
+Fetch and display reviews for a nanny profile:
+
+```typescript
+// GET /reviews/nanny/:nannyId
+const response = await fetch(`http://localhost:4000/reviews/nanny/${nannyId}`);
+const reviews = await response.json();
+
+reviews.forEach(review => {
+  // Access reviewer information
+  const reviewer = review.users_reviews_reviewer_idTousers;
+  const reviewerName = reviewer?.profiles?.first_name || 'Anonymous';
+  const reviewerRole = reviewer?.role; // 'parent' or 'nanny'
+  
+  // Display review
+  console.log(`${reviewerName} (${reviewerRole}): ${'⭐'.repeat(review.rating)}`);
+  console.log(`Comment: ${review.comment || 'No comment'}`);
+  console.log(`Date: ${new Date(review.created_at).toLocaleDateString()}`);
+  
+  // Access booking details if needed
+  if (review.bookings) {
+    console.log(`Booking: ${review.bookings.start_time} - ${review.bookings.end_time}`);
+  }
+});
+```
+
+### Getting Reviews for a Booking
+
+Fetch all reviews associated with a specific booking (max 2: one from parent, one from nanny):
+
+```typescript
+// GET /reviews/booking/:bookingId
+const response = await fetch(`http://localhost:4000/reviews/booking/${bookingId}`);
+const reviews = await response.json();
+
+console.log(`This booking has ${reviews.length} review(s)`);
+reviews.forEach(review => {
+  const isParentReview = review.users_reviews_reviewer_idTousers?.role === 'parent';
+  console.log(`${isParentReview ? 'Parent' : 'Nanny'} review: ${review.rating}/5`);
+});
+```
+
+### Review Response Structure
+
+When fetching reviews, the API returns detailed information:
+
+```typescript
+interface Review {
+  id: string;
+  booking_id: string;
+  reviewer_id: string;
+  reviewee_id: string;
+  rating: number; // 1-5
+  comment: string | null;
+  created_at: string; // ISO 8601
+  
+  // Reviewer details (who wrote the review)
+  users_reviews_reviewer_idTousers?: {
+    id: string;
+    role: "nanny" | "parent";
+    profiles: {
+      first_name: string;
+      last_name: string;
+      profile_image_url: string | null;
+    };
+  };
+  
+  // Reviewee details (who received the review)
+  users_reviews_reviewee_idTousers?: {
+    id: string;
+    role: "nanny" | "parent";
+    profiles: {
+      first_name: string;
+      last_name: string;
+      profile_image_url: string | null;
+    };
+  };
+  
+  // Booking details
+  bookings?: {
+    id: string;
+    start_time: string;
+    end_time: string;
+  };
+}
+```
+
+**For comprehensive Reviews API documentation with all endpoints, validation rules, and TypeScript interfaces, see [REVIEWS_API.md](./REVIEWS_API.md).**
+

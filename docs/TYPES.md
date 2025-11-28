@@ -18,6 +18,9 @@ export interface User {
   updated_at: string;  // ISO 8601 timestamp
   profiles?: UserProfile;
   nanny_details?: NannyDetails;
+  // Rating fields (only for nannies, calculated from reviews)
+  averageRating?: number | null;  // Rounded to 1 decimal place
+  totalReviews?: number;  // Count of reviews received
   // Note: Sensitive fields excluded from API responses:
   // password_hash, oauth_access_token, oauth_refresh_token,
   // verification_token, reset_password_token
@@ -247,5 +250,63 @@ export interface PaginatedResponse<T> extends ApiResponse<T[]> {
 export interface NearbySearchResponse<T> extends ApiResponse<T[]> {
   count: number;
   radius: string;
+}
+```
+
+## Review Models
+
+```typescript
+export interface Review {
+  id: string;
+  booking_id: string;
+  reviewer_id: string;
+  reviewee_id: string;
+  rating: number; // Integer 1-5
+  comment: string | null;
+  created_at: string; // ISO 8601 timestamp
+
+  // Relations (included in API responses)
+  users_reviews_reviewer_idTousers?: {
+    id: string;
+    role: "nanny" | "parent" | "admin";
+    profiles: {
+      first_name: string;
+      last_name: string;
+      profile_image_url: string | null;
+    } | null;
+  };
+
+  users_reviews_reviewee_idTousers?: {
+    id: string;
+    role: "nanny" | "parent" | "admin";
+    profiles: {
+      first_name: string;
+      last_name: string;
+      profile_image_url: string | null;
+    } | null;
+  };
+
+  bookings?: {
+    id: string;
+    start_time: string;
+    end_time: string;
+  };
+}
+
+export interface CreateReviewDto {
+  bookingId: string; // UUID
+  rating: number;    // Integer 1-5
+  comment?: string;  // Optional, max 1000 characters
+}
+
+export interface UpdateReviewDto {
+  rating?: number;   // Integer 1-5
+  comment?: string;  // Optional, max 1000 characters
+}
+
+export interface CanReviewResponse {
+  canReview: boolean;
+  reason: string | null;
+  existingReview?: Review;
 }
 ```

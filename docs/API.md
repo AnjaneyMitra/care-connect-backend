@@ -207,13 +207,16 @@ Retrieve all users with the role "nanny" (caregivers).
         },
         "created_at": "ISO 8601 timestamp",
         "updated_at": "ISO 8601 timestamp"
-      }
+      },
+      "averageRating": 4.7,  // Average rating from reviews (null if no reviews)
+      "totalReviews": 12     // Total number of reviews received
     }
   ]
   ```
   **Note**: 
   - Results are ordered by creation date (newest first)
   - Sensitive fields excluded: `password_hash`, `oauth_access_token`, `oauth_refresh_token`, `verification_token`, `reset_password_token`
+  - Each nanny includes `averageRating` (number | null, rounded to 1 decimal) and `totalReviews` (number)
   - This endpoint is useful for displaying all available caregivers on a search/browse page
 
 #### GET /users/:id
@@ -223,7 +226,9 @@ Retrieve a specific user's profile by ID.
 - **Path Parameters**:
   - `id` (string): User UUID
 - **Response**: `User` object (same structure as `/users/me`)
-- **Note**: Sensitive fields (password_hash, oauth tokens, verification tokens) are excluded
+- **Note**: 
+  - Sensitive fields (password_hash, oauth tokens, verification tokens) are excluded
+  - If the user is a nanny, response includes `averageRating` (number | null) and `totalReviews` (number)
 
 #### PUT /users/:id
 Update a user's profile information.
@@ -638,11 +643,50 @@ Create a review for a completed booking.
   ```json
   {
     "bookingId": "uuid",
-    "rating": 5,  // 1-5
-    "comment": "string"
+    "rating": 5,  // 1-5 (integer)
+    "comment": "string"  // Optional, max 1000 characters
   }
   ```
-- **Response**: `Review` object
+- **Response**: `Review` object with reviewee details
+- **Business Rules**:
+  - Booking must have status `COMPLETED`
+  - User must be part of the booking (parent or nanny)
+  - Each user can only review once per booking
+  - Reviewee is automatically determined (the other party)
+
+#### PATCH /reviews/:id
+Update an existing review (rating or comment).
+
+- **Authentication**: Required (JWT - Must be the reviewer)
+- **Path Parameters**:
+  - `id` (string): Review UUID
+- **Request Body**:
+  ```json
+  {
+    "rating": 4,  // Optional, 1-5
+    "comment": "Updated comment"  // Optional
+  }
+  ```
+- **Response**: Updated `Review` object
+- **Error Responses**:
+  - `403 Forbidden`: User is not the reviewer
+  - `404 Not Found`: Review doesn't exist
+
+#### DELETE /reviews/:id
+Delete a review.
+
+- **Authentication**: Required (JWT - Must be the reviewer)
+- **Path Parameters**:
+  - `id` (string): Review UUID
+- **Response**:
+  ```json
+  {
+    "message": "Review deleted successfully"
+  }
+  ```
+- **Error Responses**:
+  - `403 Forbidden`: User is not the reviewer
+  - `404 Not Found`: Review doesn't exist
 
 #### GET /reviews/user/:userId
 Get all reviews received by a specific user (parent or nanny).
@@ -650,15 +694,67 @@ Get all reviews received by a specific user (parent or nanny).
 - **Authentication**: Not required
 - **Path Parameters**:
   - `userId` (string): User UUID
+- **Response**: Array of `Review` objects with reviewer details, ordered by creation date (newest first)
+
+#### GET /reviews/nanny/:nannyId
+Get all reviews for a specific nanny.
+
+- **Authentication**: Not required
+- **Path Parameters**:
+  - `nannyId` (string): Nanny's user UUID
 - **Response**: Array of `Review` objects with reviewer details
+- **Error Responses**:
+  - `400 Bad Request`: User is not a nanny
+  - `404 Not Found`: User doesn't exist
+- **Note**: Validates that the user has role "nanny"
+
+#### GET /reviews/parent/:parentId
+Get all reviews for a specific parent.
+
+- **Authentication**: Not required
+- **Path Parameters**:
+  - `parentId` (string): Parent's user UUID
+- **Response**: Array of `Review` objects with reviewer details
+- **Error Responses**:
+  - `400 Bad Request`: User is not a parent
+  - `404 Not Found`: User doesn't exist
+- **Note**: Validates that the user has role "parent"
 
 #### GET /reviews/booking/:bookingId
-Get the review associated with a specific booking.
+Get all reviews associated with a specific booking.
 
 - **Authentication**: Not required
 - **Path Parameters**:
   - `bookingId` (string): Booking UUID
-- **Response**: Array of `Review` objects (usually one)
+- **Response**: Array of `Review` objects (maximum 2: one from parent, one from nanny)
+
+#### GET /reviews/booking/:bookingId/can-review
+Check if the current user can review a specific booking.
+
+- **Authentication**: Required (JWT)
+- **Path Parameters**:
+  - `bookingId` (string): Booking UUID
+- **Response** (Can review):
+  ```json
+  {
+    "canReview": true,
+    "reason": null
+  }
+  ```
+- **Response** (Cannot review):
+  ```json
+  {
+    "canReview": false,
+    "reason": "You have already reviewed this booking",
+    "existingReview": { ... }  // Optional, present if already reviewed
+  }
+  ```
+- **Possible Reasons**:
+  - "You are not part of this booking"
+  - "Booking must be completed before reviewing"
+  - "You have already reviewed this booking"
+
+**For comprehensive Reviews API documentation with TypeScript interfaces and integration examples, see [REVIEWS_API.md](./REVIEWS_API.md).**
 
 ### Notifications
 
@@ -811,6 +907,6 @@ The following features are planned but not yet available via API:
 
 ---
 
-**Last Updated**: November 25, 2025  
+**Last Updated**: November 28, 2025  
 **API Version**: 1.0.0  
 **Backend Port**: 4000
