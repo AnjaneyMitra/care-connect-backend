@@ -186,16 +186,23 @@ export class RequestsService {
       console.log(`Assigned request ${requestId} to nanny ${bestMatch.id}`);
 
       // Notify Nanny
-      await this.notificationsService.sendPushNotification(
+      await this.notificationsService.createNotification(
         bestMatch.id,
         "New Service Request",
         `You have a new service request nearby! Tap to view details.`,
+        "info"
       );
 
       return assignment;
     } else {
       console.log(`No nannies found for request ${requestId}`);
-      // TODO: Notify parent no matches found
+      // Notify parent no matches found
+      await this.notificationsService.createNotification(
+        request.parent_id,
+        "No Matches Found",
+        `We couldn't find a nanny for your request at this time. We will keep looking.`,
+        "warning"
+      );
       return null;
     }
   }

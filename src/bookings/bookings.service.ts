@@ -5,12 +5,14 @@ import {
 } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { ChatService } from "../chat/chat.service";
+import { NotificationsService } from "../notifications/notifications.service";
 
 @Injectable()
 export class BookingsService {
   constructor(
     private prisma: PrismaService,
     private chatService: ChatService,
+    private notificationsService: NotificationsService,
   ) { }
 
   async createBooking(
@@ -69,6 +71,22 @@ export class BookingsService {
 
     // Create a chat for this booking
     await this.chatService.createChat(booking.id);
+
+    // Notify Nanny
+    await this.notificationsService.createNotification(
+      nannyId,
+      "New Booking",
+      `You have a new booking confirmed for ${finalStartTime.toDateString()}.`,
+      "success"
+    );
+
+    // Notify Parent
+    await this.notificationsService.createNotification(
+      parentId,
+      "Booking Confirmed",
+      `Your booking has been successfully created.`,
+      "success"
+    );
 
     return booking;
   }
@@ -140,13 +158,23 @@ export class BookingsService {
       throw new BadRequestException("Booking must be CONFIRMED to start");
     }
 
-    return this.prisma.bookings.update({
+    const updatedBooking = await this.prisma.bookings.update({
       where: { id },
       data: {
         status: "IN_PROGRESS",
         start_time: new Date(), // Update actual start time
       },
     });
+
+    // Notify Parent
+    await this.notificationsService.createNotification(
+      booking.parent_id,
+      "Booking Started",
+      `The nanny has started the booking.`,
+      "info"
+    );
+
+    return updatedBooking;
   }
 
   async completeBooking(id: string) {
@@ -156,13 +184,23 @@ export class BookingsService {
       throw new BadRequestException("Booking must be IN_PROGRESS to complete");
     }
 
-    return this.prisma.bookings.update({
+    const updatedBooking = await this.prisma.bookings.update({
       where: { id },
       data: {
         status: "COMPLETED",
         end_time: new Date(), // Capture actual end time
       },
     });
+
+    // Notify Parent
+    await this.notificationsService.createNotification(
+      booking.parent_id,
+      "Booking Completed",
+      `The booking has been completed.`,
+      "success"
+    );
+
+    return updatedBooking;
   }
 
   async cancelBooking(id: string, reason?: string) {
@@ -177,12 +215,28 @@ export class BookingsService {
 
     // Ideally store the cancellation reason in a separate table or a new column
     // For now, just updating status
-    return this.prisma.bookings.update({
+    const updatedBooking = await this.prisma.bookings.update({
       where: { id },
       data: {
         status: "CANCELLED",
       },
     });
+
+    // Notify both parties
+    await this.notificationsService.createNotification(
+      booking.nanny_id,
+      "Booking Cancelled",
+      `The booking has been cancelled.`,
+      "warning"
+    );
+    await this.notificationsService.createNotification(
+      booking.parent_id,
+      "Booking Cancelled",
+      `The booking has been cancelled.`,
+      "warning"
+    );
+
+    return updatedBooking;
   }
 
   async getActiveBookings(userId: string, role: "parent" | "nanny") {

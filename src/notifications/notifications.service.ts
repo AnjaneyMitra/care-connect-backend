@@ -1,27 +1,98 @@
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import { PrismaService } from "../prisma/prisma.service";
+import { NotificationsGateway } from "./notifications.gateway";
 
 @Injectable()
 export class NotificationsService {
-  constructor(private configService: ConfigService) {}
+  constructor(
+    private configService: ConfigService,
+    private prisma: PrismaService,
+    private notificationsGateway: NotificationsGateway,
+  ) { }
 
+  async createNotification(
+    userId: string,
+    title: string,
+    message: string,
+    type: "info" | "success" | "warning" | "error" = "info",
+  ) {
+    // 1. Save to Database
+    const notification = await this.prisma.notifications.create({
+      data: {
+        user_id: userId,
+        title,
+        message,
+        type,
+      },
+    });
+
+    // 2. Send Real-time Update via WebSocket
+    this.notificationsGateway.sendToUser(userId, notification);
+
+    // 3. Optional: Send Push/Email based on preferences (keeping existing placeholders)
+    // this.sendPushNotification(userId, title, message);
+
+    return notification;
+  }
+
+  async sendToAllParents(title: string, message: string) {
+    const parents = await this.prisma.users.findMany({
+      where: { role: "parent" },
+    });
+
+    for (const parent of parents) {
+      await this.createNotification(parent.id, title, message);
+    }
+
+    return { count: parents.length };
+  }
+
+  async sendToAllNannies(title: string, message: string) {
+    const nannies = await this.prisma.users.findMany({
+      where: { role: "nanny" },
+    });
+
+    for (const nanny of nannies) {
+      await this.createNotification(nanny.id, title, message);
+    }
+
+    return { count: nannies.length };
+  }
+
+  async getUserNotifications(userId: string) {
+    return this.prisma.notifications.findMany({
+      where: { user_id: userId },
+      orderBy: { created_at: "desc" },
+    });
+  }
+
+  async markAsRead(notificationId: string) {
+    return this.prisma.notifications.update({
+      where: { id: notificationId },
+      data: { is_read: true },
+    });
+  }
+
+  async markAllAsRead(userId: string) {
+    return this.prisma.notifications.updateMany({
+      where: { user_id: userId, is_read: false },
+      data: { is_read: true },
+    });
+  }
+
+  // Legacy methods adapted
   async sendEmail(to: string, subject: string, text: string) {
-    // Placeholder for email sending logic (e.g., using Nodemailer or SendGrid)
     console.log(`[Email] To: ${to}, Subject: ${subject}, Body: ${text}`);
-    // In a real implementation, you would use a library here.
-    // Example: await this.transporter.sendMail({ ... });
     return { success: true, method: "email" };
   }
 
   async sendPushNotification(userId: string, title: string, body: string) {
-    // Placeholder for push notification logic (e.g., using Firebase FCM)
     console.log(`[Push] User: ${userId}, Title: ${title}, Body: ${body}`);
-    // Example: await admin.messaging().send({ ... });
     return { success: true, method: "push" };
   }
 
   async sendSms(phoneNumber: string, message: string) {
-    // Placeholder for SMS logic (e.g., Twilio)
     console.log(`[SMS] To: ${phoneNumber}, Message: ${message}`);
     return { success: true, method: "sms" };
   }
@@ -31,23 +102,38 @@ export class NotificationsService {
     nannyEmail: string,
     bookingId: string,
   ) {
-    await this.sendEmail(
-      parentEmail,
-      "Booking Confirmed",
-      `Your booking ${bookingId} has been confirmed.`,
-    );
-    await this.sendEmail(
-      nannyEmail,
-      "Booking Confirmed",
-      `You have a new confirmed booking ${bookingId}.`,
-    );
+    // We need user IDs to create persistent notifications. 
+    // Assuming the caller might provide IDs or we fetch them.
+    // For now, let's look up users by email if possible, or just log if not found.
+
+    const parent = await this.prisma.users.findUnique({ where: { email: parentEmail } });
+    const nanny = await this.prisma.users.findUnique({ where: { email: nannyEmail } });
+
+    if (parent) {
+      await this.createNotification(
+        parent.id,
+        "Booking Confirmed",
+        `Your booking has been confirmed.`,
+        "success"
+      );
+    }
+
+    if (nanny) {
+      await this.createNotification(
+        nanny.id,
+        "Booking Confirmed",
+        `You have a new confirmed booking.`,
+        "success"
+      );
+    }
   }
 
   async notifyNewMessage(recipientId: string, senderName: string) {
-    await this.sendPushNotification(
+    await this.createNotification(
       recipientId,
       "New Message",
       `You have a new message from ${senderName}`,
+      "info"
     );
   }
 }

@@ -115,10 +115,11 @@ export class AssignmentsService {
     await this.updateAcceptanceRate(nannyId);
 
     // 5. Notify Parent
-    await this.notificationsService.sendPushNotification(
+    await this.notificationsService.createNotification(
       assignment.service_requests.parent_id,
       "Booking Confirmed!",
       `A nanny has accepted your request. Tap to view booking details.`,
+      "success"
     );
 
     return { assignment: updatedAssignment, booking };
