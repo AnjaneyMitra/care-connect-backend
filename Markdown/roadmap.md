@@ -60,9 +60,9 @@ This roadmap outlines the unimplemented features from `features.md` and addition
 - [ ] **Reference Checks**: Contact and verify references.
 
 ### 12. Scheduling & Availability
-- [ ] **Recurring Bookings**: Schedule weekly/monthly recurring care.
+- [x] **Recurring Bookings**: Schedule weekly/monthly recurring care.
 - [ ] **Calendar Integration**: Sync with Google Calendar/iCal.
-- [ ] **Availability Blocking**: Nannies can block out unavailable times.
+- [x] **Availability Blocking**: Nannies can block out unavailable times.
 
 ### 13. Emergency Features
 - [ ] **Emergency Contacts**: Store and access emergency contact info.
