@@ -6,6 +6,19 @@ export class FavoritesService {
     constructor(private prisma: PrismaService) { }
 
     async addFavorite(parentId: string, nannyId: string) {
+        // Check if already favorited
+        const existing = await this.prisma.favorite_nannies.findFirst({
+            where: {
+                parent_id: parentId,
+                nanny_id: nannyId,
+            },
+        });
+
+        if (existing) {
+            // Return existing favorite instead of throwing error
+            return existing;
+        }
+
         return this.prisma.favorite_nannies.create({
             data: {
                 parent_id: parentId,
