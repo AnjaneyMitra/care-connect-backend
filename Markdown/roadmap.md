@@ -1,4 +1,6 @@
-# Project Roadmap & Feature Status
+# Care Connect - Roadmap
+
+This roadmap outlines the unimplemented features from `features.md` and additional feature ideas for the Care Connect application.
 
 ## 🚧 Unimplemented Features (from features.md)
 
@@ -11,26 +13,22 @@
 - [ ] **Profile Image Upload**: Cloudinary/S3 integration for image uploads.
 
 ### 3. Service Request & Auto-Matching
-- [x] **Assignment Timeout Handling**: No scheduled task to auto-reject assignments after the deadline.
-- [x] **Cancel Request**: Endpoint to cancel a pending request before acceptance.
-- [x] **Advanced Matching Logic**:
-    - `children_ages` and `required_skills` validation is basic.
-    - `max_hourly_rate` logic is basic.
+- [x] **Assignment Timeout Handling**: Automatic rejection after deadline.
+- [x] **Cancel Request Endpoint**: Allow parents to cancel pending requests.
+- [x] **Advanced Matching Logic**: Stricter skill matching and refined scoring.
 
 ### 4. Booking System
-- [x] **Cancellation Reason**: Storage for cancellation reasons.
-- [x] **Cancellation Fees**: Logic to calculate and charge fees.
-- [x] **Payment Release**: Trigger payment release on completion.
-- [x] **Review Trigger**: Automatic prompt for review after completion.
+- [x] **Cancellation Reasons**: Store reason when booking is cancelled.
+- [x] **Cancellation Fees**: Calculate fee if cancelled within 24 hours.
+- [x] **Payment Release Trigger**: Create payment record on completion.
+- [x] **Review Prompt Trigger**: Notify both parties to leave reviews.
 
-### 5. Messaging System
-- [ ] **File/Image Uploads**: Endpoint to handle attachment uploads for chat.
+### 5. Chat System
+- [ ] **File/Image Uploads**: Allow sending images/files in chat.
 
-### 6. Payments & Payouts (Major Missing Module)
-- [ ] **Payment Gateway Integration**: Stripe Connect or Razorpay.
-- [ ] **Escrow System**: Hold funds at booking.
-- [ ] **Commission Logic**: Deduct platform fee.
-- [ ] **Payouts**: Automated transfer to nannies.
+### 6. Payment System
+- [ ] **Payment Gateway Integration**: Stripe/PayPal integration.
+- [ ] **Escrow System**: Hold payment until service completion.
 - [ ] **Invoicing**: Generate receipts.
 
 ### 7. Admin Module
@@ -43,29 +41,46 @@
 ### 8. Notifications
 - [ ] **External Channels**: SMS (Twilio) and Email (SendGrid/Resend) integration.
 
----
+### 9. Reviews & Ratings
+- [x] **Rating Categories**: Punctuality, professionalism, care quality, communication.
+- [x] **Edit/Delete Reviews**: Allow users to modify their reviews.
+- [x] **Review Responses**: Allow reviewees to respond.
 
-## 💡 New Feature Ideas
+## 🆕 New Feature Ideas
 
-### 🛡️ Trust & Safety
-1.  **Background Check Integration**: Integrate with services like Checkr to automatically verify nanny backgrounds and display a "Verified" badge.
-2.  **Emergency Assistance**: In-app "SOS" button for nannies and parents during active bookings, connecting to local emergency services or support.
-3.  **Identity Verification**: AI-powered ID verification (e.g., matching selfie with ID card).
+### 10. Location & AI Features
+- [x] **Live Nanny Tracking**: Real-time location tracking via WebSocket when nanny is en route.
+- [x] **Geofencing Alerts**: Notify parents if nanny arrives/leaves care location unexpectedly.
+- [x] **Favorite Nannies**: Parents can favorite nannies for prioritized matching (+50 pts).
+- [x] **AI-Powered Matching**: Gemini API learns from successful matches (+30 pts).
 
-### 📍 Location & Real-Time
-4.  **Live Nanny Tracking**: Allow parents to see the nanny's location when they are "En Route" to the booking.
-5.  **Geofencing Alerts**: Notify parents if a nanny arrives or leaves the designated care location unexpectedly.
+### 11. Background Checks & Verification
+- [ ] **Background Check Integration**: Integrate with Checkr or similar service.
+- [ ] **Document Verification**: Upload and verify certifications (CPR, First Aid).
+- [ ] **Reference Checks**: Contact and verify references.
 
-### 🤝 User Experience
-6.  **Favorite Nannies**: Allow parents to "favorite" nannies. The matching algorithm could prioritize these nannies for future requests.
-7.  **Calendar Sync**: Integrate with Google/Apple Calendar to automatically sync bookings and availability.
-8.  **Multi-Language Support**: Internationalization (i18n) for the entire platform.
+### 12. Scheduling & Availability
+- [ ] **Recurring Bookings**: Schedule weekly/monthly recurring care.
+- [ ] **Calendar Integration**: Sync with Google Calendar/iCal.
+- [ ] **Availability Blocking**: Nannies can block out unavailable times.
 
-### 💰 Monetization & Loyalty
-9.  **Loyalty Program**: Points system for parents (discounts) and nannies (bonuses) based on completed bookings and high ratings.
-10. **Subscription Plans**: "Premium Parent" membership for waived booking fees or priority matching.
-11. **Nanny Teams/Backups**: Allow nannies to form "teams" where a backup is automatically suggested if the primary nanny cancels.
+### 13. Emergency Features
+- [ ] **Emergency Contacts**: Store and access emergency contact info.
+- [ ] **SOS Button**: Quick alert to parent/emergency services.
+- [ ] **Incident Reporting**: Document and report incidents.
 
-### 🤖 AI & Automation
-12. **AI-Powered Matching**: Use machine learning to improve matching over time based on successful past pairings and feedback.
-13. **Smart Pricing**: Dynamic pricing suggestions for nannies based on demand, time of day, and location.
+### 14. Gamification & Rewards
+- [ ] **Achievement Badges**: Reward nannies for milestones.
+- [ ] **Loyalty Program**: Discounts for frequent users.
+- [ ] **Referral System**: Rewards for referring new users.
+
+### 15. Enhanced Communication
+- [ ] **Video Calls**: In-app video calling for interviews.
+- [ ] **Voice Messages**: Send voice notes in chat.
+- [ ] **Translation**: Auto-translate messages for multilingual support.
+
+## 📊 Priority Levels
+
+- **High**: Features 1, 3, 4, 6, 7, 9, 10 (Completed)
+- **Medium**: Features 2, 5, 8, 11, 12
+- **Low**: Features 13, 14, 15
