@@ -3,9 +3,9 @@
 ## 🚧 Unimplemented Features (from features.md)
 
 ### 1. Authentication & Authorization
-- [ ] **Refresh Token Rotation**: Currently only access tokens are issued.
-- [ ] **Forgot/Reset Password Flow**: Endpoints and logic missing.
-- [ ] **Account Verification**: Email/SMS verification flow not implemented (only implicit via Google OAuth).
+- [x] **Refresh Token Rotation**: Currently only access tokens are issued.
+- [x] **Forgot/Reset Password Flow**: Endpoints and logic missing.
+- [x] **Account Verification**: Email/SMS verification flow not implemented (only implicit via Google OAuth).
 
 ### 2. User & Profile Management
 - [ ] **Profile Image Upload**: Cloudinary/S3 integration for image uploads.

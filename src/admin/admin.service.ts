@@ -5,6 +5,7 @@ import { PrismaService } from "../prisma/prisma.service";
 export class AdminService {
   constructor(private prisma: PrismaService) { }
 
+  // User Management
   async getAllUsers() {
     return this.prisma.users.findMany({
       orderBy: { created_at: "desc" },
@@ -24,6 +25,21 @@ export class AdminService {
     });
   }
 
+  async verifyUser(userId: string) {
+    return this.prisma.users.update({
+      where: { id: userId },
+      data: { is_verified: true },
+    });
+  }
+
+  async banUser(userId: string) {
+    return this.prisma.users.update({
+      where: { id: userId },
+      data: { is_verified: false },
+    });
+  }
+
+  // Booking Management
   async getAllBookings() {
     return this.prisma.bookings.findMany({
       orderBy: { created_at: "desc" },
@@ -56,23 +72,146 @@ export class AdminService {
     });
   }
 
-  async verifyUser(userId: string) {
-    return this.prisma.users.update({
-      where: { id: userId },
-      data: { is_verified: true },
+  // Dispute Resolution
+  async getAllDisputes() {
+    return this.prisma.disputes.findMany({
+      orderBy: { created_at: "desc" },
+      include: {
+        bookings: {
+          include: {
+            users_bookings_parent_idTousers: {
+              select: { email: true, profiles: { select: { first_name: true, last_name: true } } },
+            },
+            users_bookings_nanny_idTousers: {
+              select: { email: true, profiles: { select: { first_name: true, last_name: true } } },
+            },
+          },
+        },
+        users_disputes_raised_byTousers: {
+          select: { email: true, profiles: { select: { first_name: true, last_name: true } } },
+        },
+        users_disputes_resolved_byTousers: {
+          select: { email: true, profiles: { select: { first_name: true, last_name: true } } },
+        },
+      },
     });
   }
 
-  async banUser(userId: string) {
-    // In a real app, you might have a 'status' field (active, banned, suspended).
-    // For now, we'll just revoke verification or add a comment.
-    // Let's assume we toggle is_verified to false for now as a simple "ban".
-    return this.prisma.users.update({
-      where: { id: userId },
-      data: { is_verified: false },
+  async getDisputeById(id: string) {
+    return this.prisma.disputes.findUnique({
+      where: { id },
+      include: {
+        bookings: true,
+        users_disputes_raised_byTousers: {
+          select: { email: true, profiles: true },
+        },
+      },
     });
   }
 
+  async resolveDispute(id: string, resolution: string, resolvedBy: string) {
+    return this.prisma.disputes.update({
+      where: { id },
+      data: {
+        status: "resolved",
+        resolution,
+        resolved_by: resolvedBy,
+        updated_at: new Date(),
+      },
+    });
+  }
+
+  // Payment Monitoring
+  async getAllPayments() {
+    return this.prisma.payments.findMany({
+      orderBy: { created_at: "desc" },
+      include: {
+        bookings: {
+          include: {
+            users_bookings_parent_idTousers: {
+              select: { email: true, profiles: { select: { first_name: true, last_name: true } } },
+            },
+            users_bookings_nanny_idTousers: {
+              select: { email: true, profiles: { select: { first_name: true, last_name: true } } },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async getPaymentStats() {
+    const totalPayments = await this.prisma.payments.count();
+    const totalAmount = await this.prisma.payments.aggregate({
+      _sum: { amount: true },
+    });
+    const pendingPayments = await this.prisma.payments.count({
+      where: { status: "pending_release" },
+    });
+
+    return {
+      totalPayments,
+      totalAmount: totalAmount._sum.amount || 0,
+      pendingPayments,
+    };
+  }
+
+  // Review Moderation
+  async getAllReviews() {
+    return this.prisma.reviews.findMany({
+      orderBy: { created_at: "desc" },
+      include: {
+        users_reviews_reviewer_idTousers: {
+          select: { email: true, profiles: { select: { first_name: true, last_name: true } } },
+        },
+        users_reviews_reviewee_idTousers: {
+          select: { email: true, profiles: { select: { first_name: true, last_name: true } } },
+        },
+        bookings: true,
+      },
+    });
+  }
+
+  async approveReview(id: string) {
+    return this.prisma.reviews.update({
+      where: { id },
+      data: {
+        is_approved: true,
+        moderation_status: "approved",
+      },
+    });
+  }
+
+  async rejectReview(id: string) {
+    return this.prisma.reviews.update({
+      where: { id },
+      data: {
+        is_approved: false,
+        moderation_status: "rejected",
+      },
+    });
+  }
+
+  // Matching Configuration
+  async getSettings() {
+    return this.prisma.system_settings.findMany();
+  }
+
+  async getSetting(key: string) {
+    return this.prisma.system_settings.findUnique({
+      where: { key },
+    });
+  }
+
+  async updateSetting(key: string, value: any) {
+    return this.prisma.system_settings.upsert({
+      where: { key },
+      update: { value, updated_at: new Date() },
+      create: { key, value },
+    });
+  }
+
+  // Analytics
   async getSystemStats() {
     const totalUsers = await this.prisma.users.count();
     const totalBookings = await this.prisma.bookings.count();
@@ -84,6 +223,58 @@ export class AdminService {
       totalUsers,
       totalBookings,
       activeBookings,
+    };
+  }
+
+  async getAdvancedStats() {
+    const totalRequests = await this.prisma.service_requests.count();
+    const completedBookings = await this.prisma.bookings.count({
+      where: { status: "COMPLETED" },
+    });
+    const cancelledBookings = await this.prisma.bookings.count({
+      where: { status: "CANCELLED" },
+    });
+
+    const completionRate = totalRequests > 0 ? (completedBookings / totalRequests) * 100 : 0;
+
+    const totalAssignments = await this.prisma.assignments.count();
+    const acceptedAssignments = await this.prisma.assignments.count({
+      where: { status: "accepted" },
+    });
+    const acceptanceRate = totalAssignments > 0 ? (acceptedAssignments / totalAssignments) * 100 : 0;
+
+    const revenueData = await this.prisma.payments.aggregate({
+      _sum: { amount: true },
+    });
+    const totalRevenue = revenueData._sum.amount || 0;
+
+    // Popular service times (simplified - count by hour of day)
+    const bookings = await this.prisma.bookings.findMany({
+      where: { start_time: { not: null } },
+      select: { start_time: true },
+    });
+
+    const hourCounts = new Array(24).fill(0);
+    bookings.forEach((booking) => {
+      if (booking.start_time) {
+        const hour = new Date(booking.start_time).getHours();
+        hourCounts[hour]++;
+      }
+    });
+
+    const popularTimes = hourCounts
+      .map((count, hour) => ({ hour, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    return {
+      completionRate: Math.round(completionRate * 10) / 10,
+      acceptanceRate: Math.round(acceptanceRate * 10) / 10,
+      totalRevenue,
+      popularTimes,
+      totalRequests,
+      completedBookings,
+      cancelledBookings,
     };
   }
 }

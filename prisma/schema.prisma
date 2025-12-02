@@ -44,6 +44,7 @@ model bookings {
   chats                           chats[]
   payments                        payments[]
   reviews                         reviews[]
+  disputes                        disputes[]
 }
 
 model chats {
@@ -171,6 +172,8 @@ model reviews {
   reviewee_id                      String?   @db.Uuid
   rating                           Int?
   comment                          String?
+  is_approved                      Boolean?  @default(true)
+  moderation_status                String?   @default("approved") @db.VarChar(50)
   created_at                       DateTime? @default(now()) @db.Timestamptz(6)
   bookings                         bookings? @relation(fields: [booking_id], references: [id], onUpdate: NoAction)
   users_reviews_reviewee_idTousers users?    @relation("reviews_reviewee_idTousers", fields: [reviewee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
@@ -207,6 +210,8 @@ model users {
   service_requests                   service_requests[]
   assignments                        assignments[]
   notifications                      notifications[]
+  disputes_disputes_raised_byTousers disputes[]         @relation("disputes_raised_byTousers")
+  disputes_disputes_resolved_byTousers disputes[]       @relation("disputes_resolved_byTousers")
 
   @@unique([oauth_provider, oauth_provider_id])
 }
@@ -220,4 +225,27 @@ model notifications {
   is_read    Boolean   @default(false)
   created_at DateTime? @default(now()) @db.Timestamptz(6)
   users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model disputes {
+  id          String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  booking_id  String    @db.Uuid
+  raised_by   String    @db.Uuid
+  reason      String    @db.VarChar(255)
+  description String?
+  status      String    @default("open") @db.VarChar(50)
+  resolution  String?
+  resolved_by String?   @db.Uuid
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime? @default(now()) @db.Timestamptz(6)
+  bookings    bookings  @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_disputes_raised_byTousers    users @relation("disputes_raised_byTousers", fields: [raised_by], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_disputes_resolved_byTousers  users? @relation("disputes_resolved_byTousers", fields: [resolved_by], references: [id], onDelete: SetNull, onUpdate: NoAction)
+}
+
+model system_settings {
+  id         String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  key        String    @unique @db.VarChar(255)
+  value      Json
+  updated_at DateTime? @default(now()) @db.Timestamptz(6)
 }
