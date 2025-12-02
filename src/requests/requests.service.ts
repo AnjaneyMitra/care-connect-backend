@@ -7,6 +7,8 @@ import { PrismaService } from "../prisma/prisma.service";
 import { CreateRequestDto } from "./dto/create-request.dto";
 import { UsersService } from "../users/users.service";
 import { NotificationsService } from "../notifications/notifications.service";
+import { FavoritesService } from "../favorites/favorites.service";
+import { AiService } from "../ai/ai.service";
 
 @Injectable()
 export class RequestsService {
@@ -14,6 +16,8 @@ export class RequestsService {
     private prisma: PrismaService,
     private usersService: UsersService,
     private notificationsService: NotificationsService,
+    private favoritesService: FavoritesService,
+    private aiService: AiService,
   ) { }
 
   async create(parentId: string, createRequestDto: CreateRequestDto) {
@@ -138,6 +142,43 @@ export class RequestsService {
     // In-Memory Filtering & Scoring
     const requiredSkills = request.required_skills || [];
 
+    // Get parent's favorite nannies
+    const favoriteNannyIds = await this.favoritesService.getFavoriteNannyIds(request.parent_id);
+
+    // Get historical matching data for AI
+    const historicalData = await this.prisma.matching_feedback.findMany({
+      where: { was_successful: true },
+      take: 50,
+      orderBy: { created_at: "desc" },
+      include: {
+        service_requests: {
+          select: { required_skills: true },
+        },
+        users: {
+          include: { nanny_details: true },
+        },
+      },
+    });
+
+    const historicalFormatted = historicalData.map((h) => ({
+      request_skills: h.service_requests.required_skills,
+      nanny_experience: h.users.nanny_details?.experience_years || 0,
+      nanny_skills: h.users.nanny_details?.skills || [],
+      was_successful: h.was_successful,
+    }));
+
+    // Get AI scores
+    const aiScores = await this.aiService.getMatchingRecommendations(
+      {
+        required_skills: request.required_skills,
+        children_ages: request.children_ages,
+        special_requirements: request.special_requirements,
+        duration_hours: request.duration_hours,
+      },
+      nannies,
+      historicalFormatted,
+    );
+
     const scoredNannies = nannies
       .filter((nanny) => {
         // Filter by Skills (Strict Match: Nanny must have ALL required skills)
@@ -150,12 +191,10 @@ export class RequestsService {
         let score = 0;
 
         // 1. Distance (Max 30 pts) - Closer is better
-        // 0km = 30pts, 15km = 0pts
         const distanceScore = Math.max(0, 30 * (1 - nanny.distance / radiusKm));
         score += distanceScore;
 
-        // 2. Experience (Max 20 pts) - More is better
-        // 10+ years = 20pts
+        // 2. Experience (Max 20 pts)
         const experience = nanny.experience_years || 0;
         const experienceScore = Math.min(20, experience * 2);
         score += experienceScore;
@@ -165,11 +204,19 @@ export class RequestsService {
         const acceptanceScore = (acceptanceRate / 100) * 20;
         score += acceptanceScore;
 
-        // 4. Hourly Rate (Max 10 pts) - Lower is better (Value)
-        // $10/hr = 10pts, $50/hr = 0pts
+        // 4. Hourly Rate (Max 10 pts)
         const rate = Number(nanny.hourly_rate) || 0;
         const rateScore = Math.max(0, 10 * (1 - (rate - 10) / 40));
         score += rateScore;
+
+        // 5. Favorite Bonus (+50 pts)
+        if (favoriteNannyIds.includes(nanny.id)) {
+          score += 50;
+        }
+
+        // 6. AI Score (Max 30 pts)
+        const aiScore = aiScores.get(nanny.id) || 0;
+        score += (aiScore / 100) * 30;
 
         return { ...nanny, score };
       })

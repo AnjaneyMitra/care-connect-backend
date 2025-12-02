@@ -14,6 +14,8 @@ import { NotificationsModule } from "./notifications/notifications.module";
 import { AdminModule } from "./admin/admin.module";
 import { RequestsModule } from "./requests/requests.module";
 import { AssignmentsModule } from "./assignments/assignments.module";
+import { FavoritesModule } from "./favorites/favorites.module";
+import { AiModule } from "./ai/ai.module";
 
 @Module({
   imports: [
@@ -33,8 +35,10 @@ import { AssignmentsModule } from "./assignments/assignments.module";
     AdminModule,
     RequestsModule,
     AssignmentsModule,
+    FavoritesModule,
+    AiModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }
