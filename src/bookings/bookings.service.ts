@@ -178,17 +178,43 @@ export class BookingsService {
   }
 
   async completeBooking(id: string) {
-    const booking = await this.prisma.bookings.findUnique({ where: { id } });
+    const booking = await this.prisma.bookings.findUnique({
+      where: { id },
+      include: {
+        users_bookings_nanny_idTousers: {
+          include: { nanny_details: true },
+        },
+      },
+    });
     if (!booking) throw new NotFoundException("Booking not found");
     if (booking.status !== "IN_PROGRESS") {
       throw new BadRequestException("Booking must be IN_PROGRESS to complete");
     }
 
+    const endTime = new Date();
+    const startTime = booking.start_time;
+    const durationHours =
+      (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
+    const hourlyRate = Number(
+      booking.users_bookings_nanny_idTousers.nanny_details?.hourly_rate || 0,
+    );
+    const totalAmount = durationHours * hourlyRate;
+
     const updatedBooking = await this.prisma.bookings.update({
       where: { id },
       data: {
         status: "COMPLETED",
-        end_time: new Date(), // Capture actual end time
+        end_time: endTime,
+        is_review_prompted: true,
+      },
+    });
+
+    // Create Payment Record (Pending Release)
+    await this.prisma.payments.create({
+      data: {
+        booking_id: id,
+        amount: totalAmount,
+        status: "pending_release",
       },
     });
 
@@ -196,15 +222,30 @@ export class BookingsService {
     await this.notificationsService.createNotification(
       booking.parent_id,
       "Booking Completed",
-      `The booking has been completed.`,
-      "success"
+      `The booking has been completed. Total amount: $${totalAmount.toFixed(2)}. Please leave a review!`,
+      "success",
+    );
+
+    // Notify Nanny
+    await this.notificationsService.createNotification(
+      booking.nanny_id,
+      "Booking Completed",
+      `Great job! The booking is complete. Earnings: $${totalAmount.toFixed(2)}.`,
+      "success",
     );
 
     return updatedBooking;
   }
 
   async cancelBooking(id: string, reason?: string) {
-    const booking = await this.prisma.bookings.findUnique({ where: { id } });
+    const booking = await this.prisma.bookings.findUnique({
+      where: { id },
+      include: {
+        users_bookings_nanny_idTousers: {
+          include: { nanny_details: true },
+        },
+      },
+    });
     if (!booking) throw new NotFoundException("Booking not found");
 
     if (["COMPLETED", "CANCELLED"].includes(booking.status)) {
@@ -213,12 +254,31 @@ export class BookingsService {
       );
     }
 
-    // Ideally store the cancellation reason in a separate table or a new column
-    // For now, just updating status
+    // Calculate Cancellation Fee
+    // Rule: If cancelled < 24 hours before start, fee = 1 hour rate
+    let cancellationFee = 0;
+    let feeStatus = "no_fee";
+
+    const now = new Date();
+    const startTime = booking.start_time;
+    const hoursUntilStart =
+      (startTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+
+    if (hoursUntilStart < 24) {
+      const hourlyRate = Number(
+        booking.users_bookings_nanny_idTousers.nanny_details?.hourly_rate || 0,
+      );
+      cancellationFee = hourlyRate;
+      feeStatus = "pending";
+    }
+
     const updatedBooking = await this.prisma.bookings.update({
       where: { id },
       data: {
         status: "CANCELLED",
+        cancellation_reason: reason,
+        cancellation_fee: cancellationFee,
+        cancellation_fee_status: feeStatus,
       },
     });
 
@@ -226,14 +286,14 @@ export class BookingsService {
     await this.notificationsService.createNotification(
       booking.nanny_id,
       "Booking Cancelled",
-      `The booking has been cancelled.`,
-      "warning"
+      `The booking has been cancelled. Reason: ${reason || "No reason provided"}.`,
+      "warning",
     );
     await this.notificationsService.createNotification(
       booking.parent_id,
       "Booking Cancelled",
-      `The booking has been cancelled.`,
-      "warning"
+      `The booking has been cancelled.${cancellationFee > 0 ? ` A cancellation fee of $${cancellationFee} applies.` : ""}`,
+      "warning",
     );
 
     return updatedBooking;

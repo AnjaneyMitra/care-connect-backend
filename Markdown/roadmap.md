@@ -18,10 +18,10 @@
     - `max_hourly_rate` logic is basic.
 
 ### 4. Booking System
-- [ ] **Cancellation Reason**: Storage for cancellation reasons.
-- [ ] **Cancellation Fees**: Logic to calculate and charge fees.
-- [ ] **Payment Release**: Trigger payment release on completion.
-- [ ] **Review Trigger**: Automatic prompt for review after completion.
+- [x] **Cancellation Reason**: Storage for cancellation reasons.
+- [x] **Cancellation Fees**: Logic to calculate and charge fees.
+- [x] **Payment Release**: Trigger payment release on completion.
+- [x] **Review Trigger**: Automatic prompt for review after completion.
 
 ### 5. Messaging System
 - [ ] **File/Image Uploads**: Endpoint to handle attachment uploads for chat.
