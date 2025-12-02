@@ -34,11 +34,11 @@
 - [ ] **Invoicing**: Generate receipts.
 
 ### 7. Admin Module
-- [ ] **Dispute Resolution**: Interface for handling disputes.
-- [ ] **Payment Monitoring**: View transaction history.
-- [ ] **Review Moderation**: Approve/reject reviews.
-- [ ] **Matching Configuration**: Dynamic adjustment of radius, timeout, etc.
-- [ ] **Advanced Analytics**: Detailed metrics beyond basic stats.
+- [x] **Dispute Resolution**: Interface for handling disputes.
+- [x] **Payment Monitoring**: View transaction history.
+- [x] **Review Moderation**: Approve/reject reviews.
+- [x] **Matching Configuration**: Dynamic adjustment of radius, timeout, etc.
+- [x] **Advanced Analytics**: Detailed metrics beyond basic stats.
 
 ### 8. Notifications
 - [ ] **External Channels**: SMS (Twilio) and Email (SendGrid/Resend) integration.
