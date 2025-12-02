@@ -16,7 +16,7 @@ import { GoogleOauthGuard } from "./guards/google-oauth.guard";
 
 @Controller("auth")
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService) { }
 
   @Post("signup")
   async signup(@Body() userDto: any) {
@@ -35,9 +35,33 @@ export class AuthController {
       });
   }
 
+  @Post("refresh")
+  async refresh(@Body("refresh_token") refreshToken: string) {
+    return this.authService.refresh(refreshToken);
+  }
+
+  @Post("forgot-password")
+  async forgotPassword(@Body("email") email: string) {
+    return this.authService.forgotPassword(email);
+  }
+
+  @Post("reset-password")
+  async resetPassword(
+    @Body("token") token: string,
+    @Body("password") password: string,
+  ) {
+    return this.authService.resetPassword(token, password);
+  }
+
+  @Get("verify")
+  async verifyEmail(@Req() req) {
+    const token = req.query.token;
+    return this.authService.verifyEmail(token);
+  }
+
   @Get("google")
   @UseGuards(GoogleOauthGuard)
-  async googleAuth(@Req() req) {}
+  async googleAuth(@Req() req) { }
 
   @Get("google/callback")
   @UseGuards(AuthGuard("google"))
@@ -50,7 +74,7 @@ export class AuthController {
 
     // Redirect to a dedicated callback page on frontend
     res.redirect(
-      `${frontendUrl}/auth/callback?access_token=${result.access_token}`,
+      `${frontendUrl}/auth/callback?access_token=${result.access_token}&refresh_token=${result.refresh_token}`,
     );
   }
 }

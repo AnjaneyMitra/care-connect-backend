@@ -6,6 +6,7 @@ import {
   Request,
   Get,
   Param,
+  Put,
 } from "@nestjs/common";
 import { RequestsService } from "./requests.service";
 import { CreateRequestDto } from "./dto/create-request.dto";
@@ -14,7 +15,7 @@ import { AuthGuard } from "@nestjs/passport";
 @Controller("requests")
 @UseGuards(AuthGuard("jwt"))
 export class RequestsController {
-  constructor(private readonly requestsService: RequestsService) {}
+  constructor(private readonly requestsService: RequestsService) { }
 
   @Post()
   create(@Request() req, @Body() createRequestDto: CreateRequestDto) {
@@ -24,6 +25,18 @@ export class RequestsController {
   @Get("parent/me")
   findAllMyRequests(@Request() req) {
     return this.requestsService.findAllByParent(req.user.id);
+  }
+
+  @Put(":id/cancel")
+  async cancelRequest(@Param("id") id: string) {
+    return this.requestsService.cancelRequest(id);
+  }
+
+  @Get(":id/matches")
+  async getMatches(@Param("id") id: string) {
+    // This would reuse the matching logic but return list instead of assigning
+    // For now, just a placeholder or reuse triggerMatching logic without saving
+    return { message: "Not implemented yet" };
   }
 
   @Get(":id")

@@ -11,9 +11,9 @@
 - [ ] **Profile Image Upload**: Cloudinary/S3 integration for image uploads.
 
 ### 3. Service Request & Auto-Matching
-- [ ] **Assignment Timeout Handling**: No scheduled task to auto-reject assignments after the deadline.
-- [ ] **Cancel Request**: Endpoint to cancel a pending request before acceptance.
-- [ ] **Advanced Matching Logic**:
+- [x] **Assignment Timeout Handling**: No scheduled task to auto-reject assignments after the deadline.
+- [x] **Cancel Request**: Endpoint to cancel a pending request before acceptance.
+- [x] **Advanced Matching Logic**:
     - `children_ages` and `required_skills` validation is basic.
     - `max_hourly_rate` logic is basic.
 

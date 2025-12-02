@@ -61,6 +61,37 @@ export class RequestsService {
     }
   }
 
+  async cancelRequest(id: string) {
+    const request = await this.prisma.service_requests.findUnique({
+      where: { id },
+      include: { assignments: { where: { status: "pending" } } },
+    });
+
+    if (!request) throw new NotFoundException("Request not found");
+    if (request.status !== "pending") {
+      throw new BadRequestException(
+        "Cannot cancel a request that is not pending",
+      );
+    }
+
+    // Cancel any pending assignment
+    if (request.assignments.length > 0) {
+      await this.prisma.assignments.update({
+        where: { id: request.assignments[0].id },
+        data: {
+          status: "cancelled",
+          responded_at: new Date(),
+        },
+      });
+    }
+
+    // Update request status
+    return this.prisma.service_requests.update({
+      where: { id },
+      data: { status: "CANCELLED" },
+    });
+  }
+
   async triggerMatching(requestId: string) {
     const request = await this.prisma.service_requests.findUnique({
       where: { id: requestId },
@@ -83,16 +114,6 @@ export class RequestsService {
     const maxRateSql = request.max_hourly_rate
       ? `AND nd.hourly_rate <= ${request.max_hourly_rate}`
       : "";
-
-    // Skills Filter: Nanny must have ALL required skills
-    // We use array overlap operator && to check if required_skills is contained in nanny skills
-    // But Prisma raw query with arrays can be tricky. 
-    // A simpler approach for raw SQL is to check if the intersection count matches the required count.
-    // However, for simplicity and compatibility, we'll fetch candidates who match other criteria 
-    // and filter by skills in memory if the SQL gets too complex, OR use the @> operator if Postgres supports it well.
-    // Let's try to filter by skills in memory to be safe with array types, 
-    // but we can add a basic check if possible.
-    // Actually, let's do the skills check in memory to ensure correctness with the JSON/Array types.
 
     const nannies = (await this.prisma.$queryRawUnsafe(`
       SELECT 
@@ -119,7 +140,7 @@ export class RequestsService {
 
     const scoredNannies = nannies
       .filter((nanny) => {
-        // Filter by Skills
+        // Filter by Skills (Strict Match: Nanny must have ALL required skills)
         if (requiredSkills.length === 0) return true;
         const nannySkills = nanny.skills || [];
         return requiredSkills.every((skill) => nannySkills.includes(skill));
@@ -145,10 +166,6 @@ export class RequestsService {
         score += acceptanceScore;
 
         // 4. Hourly Rate (Max 10 pts) - Lower is better (Value)
-        // If rate is 0 (unlikely), give max points.
-        // We compare against a baseline, say $50/hr. 
-        // Or simpler: if they are well below max_hourly_rate (if set).
-        // Let's just give points for being affordable.
         // $10/hr = 10pts, $50/hr = 0pts
         const rate = Number(nanny.hourly_rate) || 0;
         const rateScore = Math.max(0, 10 * (1 - (rate - 10) / 40));

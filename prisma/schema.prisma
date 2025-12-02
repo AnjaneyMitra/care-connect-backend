@@ -188,6 +188,7 @@ model users {
   oauth_provider_id                  String?            @db.VarChar(255)
   oauth_access_token                 String?
   oauth_refresh_token                String?
+  refresh_token_hash                 String?            @db.VarChar(255)
   verification_token                 String?            @db.VarChar(255)
   verification_token_expires         DateTime?          @db.Timestamptz(6)
   reset_password_token               String?            @db.VarChar(255)
