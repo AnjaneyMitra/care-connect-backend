@@ -16,6 +16,8 @@ import { RequestsModule } from "./requests/requests.module";
 import { AssignmentsModule } from "./assignments/assignments.module";
 import { FavoritesModule } from "./favorites/favorites.module";
 import { AiModule } from "./ai/ai.module";
+import { RecurringBookingsModule } from "./recurring-bookings/recurring-bookings.module";
+import { AvailabilityModule } from "./availability/availability.module";
 
 @Module({
   imports: [
@@ -37,6 +39,8 @@ import { AiModule } from "./ai/ai.module";
     AssignmentsModule,
     FavoritesModule,
     AiModule,
+    RecurringBookingsModule,
+    AvailabilityModule,
   ],
   controllers: [AppController],
   providers: [AppService],
