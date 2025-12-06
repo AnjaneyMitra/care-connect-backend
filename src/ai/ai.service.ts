@@ -26,7 +26,7 @@ export class AiService {
         }
 
         try {
-            const model = this.genAI.getGenerativeModel({ model: "gemini-pro" });
+            const model = this.genAI.getGenerativeModel({ model: "gemini-pro-latest" });
 
             const prompt = `
 You are an AI matching assistant for a childcare platform. Analyze the following data and provide AI-based scoring for each nanny candidate.
@@ -78,6 +78,60 @@ Respond ONLY with a JSON object mapping nanny IDs to scores:
         } catch (error) {
             this.logger.error(`AI matching error: ${error.message}`);
             return new Map();
+        }
+    }
+
+    async chatWithAi(message: string): Promise<string> {
+        if (!this.genAI) {
+            return "I'm sorry, but I'm not currently connected to my AI brain. Please try again later.";
+        }
+
+        try {
+            const model = this.genAI.getGenerativeModel({ model: "gemini-pro-latest" });
+
+            const systemPrompt = `
+You are the intelligent assistant for "Care Connect", a platform connecting parents with qualified nannies.
+Your role is to help users (parents, nannies, and admins) understand the app, its features, and how to use it.
+
+APP OVERVIEW:
+Care Connect is a comprehensive childcare platform.
+- Parents can find nannies, post jobs, and make bookings.
+- Nannies can find work, manage their availability, and get paid.
+- Admins oversee the system.
+
+KEY FEATURES:
+1.  **Authentication**: Email/Password and Google OAuth.
+2.  **Profiles**: Detailed profiles for parents and nannies (skills, experience, rates).
+3.  **Matching**: Smart algorithm matches parents with nannies based on location, skills, and preferences.
+4.  **Booking**: Direct booking or auto-matching. Statuses: Requested, Confirmed, In Progress, Completed, Cancelled.
+5.  **Chat**: Real-time messaging between parents and nannies after booking.
+6.  **Reviews**: 5-star rating system with comments.
+7.  **Location**: Geocoding and distance-based search.
+
+USER ROLES:
+- **Parent**: Creates service requests, books nannies.
+- **Nanny**: Accepts assignments, manages profile.
+- **Admin**: Verifies users, manages disputes.
+
+DATA MODEL SUMMARY:
+- Users, Profiles, NannyDetails, ServiceRequests, Assignments, Bookings, Chats, Messages, Reviews.
+
+GUIDELINES:
+- Be helpful, polite, and professional.
+- Keep answers concise but informative.
+- If you don't know the answer, say so. Do not hallucinate features.
+- If asked about technical details (database, code), explain them in a user-friendly way if relevant, or politely decline if it's too internal.
+- Focus on explaining *how* to use the app.
+
+User Question: ${message}
+`;
+
+            const result = await model.generateContent(systemPrompt);
+            const response = await result.response;
+            return response.text();
+        } catch (error) {
+            this.logger.error(`AI chat error: ${error.message}`);
+            return "I'm having trouble processing your request right now. Please try again.";
         }
     }
 }
