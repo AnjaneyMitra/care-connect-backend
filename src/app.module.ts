@@ -18,13 +18,42 @@ import { FavoritesModule } from "./favorites/favorites.module";
 import { AiModule } from "./ai/ai.module";
 import { RecurringBookingsModule } from "./recurring-bookings/recurring-bookings.module";
 import { AvailabilityModule } from "./availability/availability.module";
+import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler";
+import { APP_GUARD } from "@nestjs/core";
+import * as Joi from "joi";
+import { LoggerModule } from "nestjs-pino";
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: "prisma.env",
+      validationSchema: Joi.object({
+        DATABASE_URL: Joi.string().required(),
+        JWT_SECRET: Joi.string().required(),
+        PORT: Joi.number().default(4000),
+        FRONTEND_URL: Joi.string().uri().optional(), // Marking optional only to avoid breaking dev if not set
+      }),
     }),
+    LoggerModule.forRoot({
+      pinoHttp: {
+        transport:
+          process.env.NODE_ENV !== "production"
+            ? {
+              target: "pino-pretty",
+              options: {
+                singleLine: true,
+              },
+            }
+            : undefined,
+      },
+    }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 600, // 10 requests per second
+      },
+    ]),
     ScheduleModule.forRoot(),
     AuthModule,
     UsersModule,
@@ -43,6 +72,13 @@ import { AvailabilityModule } from "./availability/availability.module";
     AvailabilityModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule { }
+

@@ -26,7 +26,7 @@ export class AiService {
         }
 
         try {
-            const model = this.genAI.getGenerativeModel({ model: "gemini-pro-latest" });
+            const model = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
             const prompt = `
 You are an AI matching assistant for a childcare platform. Analyze the following data and provide AI-based scoring for each nanny candidate.
