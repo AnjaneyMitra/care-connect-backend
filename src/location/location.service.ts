@@ -1,4 +1,4 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger, BadRequestException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Client } from "@googlemaps/google-maps-services-js";
 import { PrismaService } from "../prisma/prisma.service";
@@ -172,10 +172,20 @@ export class LocationService {
     lng: number,
     radiusKm: number = 10,
   ): Promise<NearbyNanny[]> {
+    // 1. Explicit Conversion
+    const latNum = parseFloat(lat.toString());
+    const lngNum = parseFloat(lng.toString());
+    const radiusNum = parseFloat(radiusKm.toString());
+
+    // 2. Validation
+    if (isNaN(latNum) || isNaN(lngNum)) {
+      throw new BadRequestException("Invalid coordinates provided");
+    }
+
     try {
-      // Use raw SQL for efficient distance calculation and filtering
-      // This avoids fetching all nannies and filtering in memory
-      const nannies = await this.prisma.$queryRawUnsafe<any[]>(`
+      // Use raw SQL with parameterized query (Prisma handles safety)
+      // We use tagged template literals for parameterized variables
+      const nannies = await this.prisma.$queryRaw<any[]>`
         SELECT 
           u.id, 
           u.email, 
@@ -191,17 +201,16 @@ export class LocationService {
           nd.experience_years,
           nd.hourly_rate,
           nd.bio,
-          (6371 * acos(cos(radians(${lat})) * cos(radians(p.lat)) * cos(radians(p.lng) - radians(${lng})) + sin(radians(${lat})) * sin(radians(p.lat)))) AS distance
-        FROM users u
-        JOIN profiles p ON u.id = p.user_id
-        LEFT JOIN nanny_details nd ON u.id = nd.user_id
+          (6371 * acos(cos(radians(${latNum})) * cos(radians(p.lat)) * cos(radians(p.lng) - radians(${lngNum})) + sin(radians(${latNum})) * sin(radians(p.lat)))) AS distance
+        FROM "User" u
+        JOIN "Profile" p ON u.id = p."userId"
+        LEFT JOIN "NannyDetails" nd ON u.id = nd."userId"
         WHERE u.role = 'nanny'
-        AND u.is_verified = true
         AND p.lat IS NOT NULL
         AND p.lng IS NOT NULL
-        AND (6371 * acos(cos(radians(${lat})) * cos(radians(p.lat)) * cos(radians(p.lng) - radians(${lng})) + sin(radians(${lat})) * sin(radians(p.lat)))) <= ${radiusKm}
+        AND (6371 * acos(cos(radians(${latNum})) * cos(radians(p.lat)) * cos(radians(p.lng) - radians(${lngNum})) + sin(radians(${latNum})) * sin(radians(p.lat)))) <= ${radiusNum}
         ORDER BY distance ASC
-      `);
+      `;
 
       // Map raw results to NearbyNanny interface
       return nannies.map((nanny) => ({
