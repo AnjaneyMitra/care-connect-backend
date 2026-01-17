@@ -14,9 +14,14 @@ import { Response } from "express";
 
 import { GoogleOauthGuard } from "./guards/google-oauth.guard";
 
+import { ConfigService } from "@nestjs/config";
+
 @Controller("auth")
 export class AuthController {
-  constructor(private authService: AuthService) { }
+  constructor(
+    private authService: AuthService,
+    private configService: ConfigService,
+  ) { }
 
   @Post("signup")
   async signup(@Body() userDto: any) {
@@ -24,20 +29,80 @@ export class AuthController {
   }
 
   @Post("login")
-  async login(@Body() req) {
-    return this.authService
-      .validateUser(req.email, req.password)
-      .then((user) => {
-        if (!user) {
-          throw new UnauthorizedException("Invalid credentials");
-        }
-        return this.authService.login(user);
-      });
+  async login(@Body() req, @Res({ passthrough: true }) res: Response) {
+    const user = await this.authService.validateUser(req.email, req.password);
+    if (!user) {
+      throw new UnauthorizedException("Invalid credentials");
+    }
+    const loginData = await this.authService.login(user);
+
+    // Set HttpOnly Cookies
+    const isProd = this.configService.get("NODE_ENV") === "production";
+    const cookieOptions = {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: (isProd ? "strict" : "lax") as "strict" | "lax", // Lax needed for extensive dev testing usually, but Strict requested. Using conditional for safety during dev.
+      path: "/",
+    };
+
+    res.cookie("access_token", loginData.access_token, {
+      ...cookieOptions,
+      maxAge: 15 * 60 * 1000, // 15m
+    });
+
+    res.cookie("refresh_token", loginData.refresh_token, {
+      ...cookieOptions,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7d
+    });
+
+    return { user: loginData.user };
+  }
+
+  @Post("logout")
+  async logout(@Res({ passthrough: true }) res: Response) {
+    const isProd = this.configService.get("NODE_ENV") === "production";
+    const cookieOptions = {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: (isProd ? "strict" : "lax") as "strict" | "lax",
+      path: "/",
+    };
+
+    res.clearCookie("access_token", cookieOptions);
+    res.clearCookie("refresh_token", cookieOptions);
+
+    return { message: "Logged out successfully" };
   }
 
   @Post("refresh")
-  async refresh(@Body("refresh_token") refreshToken: string) {
-    return this.authService.refresh(refreshToken);
+  async refresh(@Req() req, @Res({ passthrough: true }) res: Response) {
+    const refreshToken = req.cookies["refresh_token"];
+    if (!refreshToken) {
+      throw new UnauthorizedException("No refresh token found");
+    }
+
+    const loginData = await this.authService.refresh(refreshToken);
+
+    // Set HttpOnly Cookies
+    const isProd = this.configService.get("NODE_ENV") === "production";
+    const cookieOptions = {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: (isProd ? "strict" : "lax") as "strict" | "lax",
+      path: "/",
+    };
+
+    res.cookie("access_token", loginData.access_token, {
+      ...cookieOptions,
+      maxAge: 15 * 60 * 1000, // 15m
+    });
+
+    res.cookie("refresh_token", loginData.refresh_token, {
+      ...cookieOptions,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7d
+    });
+
+    return { message: "Token refreshed successfully" };
   }
 
   @Post("forgot-password")
@@ -68,13 +133,26 @@ export class AuthController {
   async googleAuthRedirect(@Req() req, @Res() res: Response) {
     const result = await this.authService.googleLogin(req.user);
 
-    // Redirect to frontend with token
-    // Frontend URL should be configurable, defaulting to localhost:3000
-    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+    const isProd = this.configService.get("NODE_ENV") === "production";
+    const cookieOptions = {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: (isProd ? "strict" : "lax") as "strict" | "lax",
+      path: "/",
+    };
 
-    // Redirect to a dedicated callback page on frontend
-    res.redirect(
-      `${frontendUrl}/auth/callback?access_token=${result.access_token}&refresh_token=${result.refresh_token}`,
-    );
+    res.cookie("access_token", result.access_token, {
+      ...cookieOptions,
+      maxAge: 15 * 60 * 1000,
+    });
+
+    res.cookie("refresh_token", result.refresh_token, {
+      ...cookieOptions,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    // Redirect to frontend without token in URL
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+    res.redirect(`${frontendUrl}/auth/callback`); // Logic on frontend: check cookies
   }
 }
