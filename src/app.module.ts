@@ -1,6 +1,8 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { ScheduleModule } from "@nestjs/schedule";
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { AuthModule } from "./auth/auth.module";
@@ -18,6 +20,7 @@ import { FavoritesModule } from "./favorites/favorites.module";
 import { AiModule } from "./ai/ai.module";
 import { RecurringBookingsModule } from "./recurring-bookings/recurring-bookings.module";
 import { AvailabilityModule } from "./availability/availability.module";
+import { VerificationModule } from "./verification/verification.module";
 import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler";
 import { APP_GUARD } from "@nestjs/core";
 import * as Joi from "joi";
@@ -54,6 +57,10 @@ import { LoggerModule } from "nestjs-pino";
         limit: 600, // 10 requests per second
       },
     ]),
+    ServeStaticModule.forRoot({
+      rootPath: join(process.cwd(), 'uploads'),
+      serveRoot: '/uploads',
+    }),
     ScheduleModule.forRoot(),
     AuthModule,
     UsersModule,
@@ -70,6 +77,7 @@ import { LoggerModule } from "nestjs-pino";
     AiModule,
     RecurringBookingsModule,
     AvailabilityModule,
+    VerificationModule,
   ],
   controllers: [AppController],
   providers: [

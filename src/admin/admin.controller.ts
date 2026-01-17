@@ -20,8 +20,13 @@ export class AdminController {
   }
 
   @Put("users/:id/ban")
-  async banUser(@Param("id") userId: string) {
-    return this.adminService.banUser(userId);
+  async banUser(@Param("id") userId: string, @Body("reason") reason?: string) {
+    return this.adminService.banUser(userId, reason);
+  }
+
+  @Put("users/:id/unban")
+  async unbanUser(@Param("id") userId: string) {
+    return this.adminService.unbanUser(userId);
   }
 
   // Booking Management

@@ -14,6 +14,8 @@ export class AdminService {
         email: true,
         role: true,
         is_verified: true,
+        is_active: true,
+        ban_reason: true,
         created_at: true,
         profiles: {
           select: {
@@ -32,10 +34,23 @@ export class AdminService {
     });
   }
 
-  async banUser(userId: string) {
+  async banUser(userId: string, reason?: string) {
     return this.prisma.users.update({
       where: { id: userId },
-      data: { is_verified: false },
+      data: {
+        is_active: false,
+        ban_reason: reason,
+      },
+    });
+  }
+
+  async unbanUser(userId: string) {
+    return this.prisma.users.update({
+      where: { id: userId },
+      data: {
+        is_active: true,
+        ban_reason: null,
+      },
     });
   }
 

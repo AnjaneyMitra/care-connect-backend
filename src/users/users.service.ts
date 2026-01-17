@@ -26,7 +26,7 @@ export class UsersService {
     });
   }
 
-  async findUserForAuth(email: string): Promise<Pick<users, 'id' | 'email' | 'password_hash' | 'role' | 'is_verified' | 'oauth_provider'> & { profiles: { first_name: string | null; last_name: string | null; profile_image_url: string | null } | null } | null> {
+  async findUserForAuth(email: string): Promise<Pick<users, 'id' | 'email' | 'password_hash' | 'role' | 'is_verified' | 'oauth_provider' | 'is_active' | 'ban_reason'> & { profiles: { first_name: string | null; last_name: string | null; profile_image_url: string | null } | null } | null> {
     return this.prisma.users.findUnique({
       where: { email },
       select: {
@@ -35,6 +35,8 @@ export class UsersService {
         password_hash: true,
         role: true,
         is_verified: true,
+        is_active: true,
+        ban_reason: true,
         oauth_provider: true,
         profiles: {
           select: {
@@ -50,7 +52,7 @@ export class UsersService {
   async findByOAuth(
     provider: string,
     providerId: string,
-  ): Promise<Pick<users, 'id' | 'email' | 'password_hash' | 'role' | 'is_verified' | 'oauth_provider'> & { profiles: { first_name: string | null; last_name: string | null; profile_image_url: string | null } | null } | null> {
+  ): Promise<Pick<users, 'id' | 'email' | 'password_hash' | 'role' | 'is_verified' | 'oauth_provider' | 'is_active' | 'ban_reason'> & { profiles: { first_name: string | null; last_name: string | null; profile_image_url: string | null } | null } | null> {
     return this.prisma.users.findUnique({
       where: {
         oauth_provider_oauth_provider_id: {
@@ -64,6 +66,8 @@ export class UsersService {
         role: true,
         password_hash: true,
         is_verified: true,
+        is_active: true,
+        ban_reason: true,
         oauth_provider: true,
         profiles: {
           select: {

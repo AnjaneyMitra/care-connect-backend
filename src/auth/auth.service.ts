@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, BadRequestException } from "@nestjs/common";
+import { Injectable, UnauthorizedException, BadRequestException, ForbiddenException } from "@nestjs/common";
 import { UsersService } from "../users/users.service";
 import { JwtService } from "@nestjs/jwt";
 import * as bcrypt from "bcrypt";
@@ -26,7 +26,7 @@ export class AuthService {
   }
 
   async login(user: any) {
-    const payload = { email: user.email, sub: user.id, role: user.role };
+    const payload = { email: user.email, sub: user.id, role: user.role, is_active: user.is_active };
     const accessToken = this.jwtService.sign(payload);
     const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
 
@@ -42,6 +42,8 @@ export class AuthService {
         email: user.email,
         role: user.role,
         is_verified: user.is_verified,
+        is_active: user.is_active,
+        ban_reason: user.ban_reason,
         oauth_provider: user.oauth_provider,
         profiles: user.profiles && (Array.isArray(user.profiles) ? user.profiles[0] : user.profiles),
       },
